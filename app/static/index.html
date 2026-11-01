@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>مصمم أصول Roblox</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Tahoma,"Segoe UI",sans-serif;background:#16161b;color:#eee;height:100vh;display:grid;grid-template-columns:360px 1fr 220px;grid-template-rows:auto 1fr}
+header{grid-column:1/-1;padding:10px 16px;background:#0e0e12;display:flex;gap:10px;align-items:center;border-bottom:1px solid #2a2a33}
+header h1{font-size:16px;margin:0;flex:1}
+button{background:#2b2b35;color:#eee;border:1px solid #3a3a46;border-radius:6px;padding:7px 12px;cursor:pointer;font-family:inherit}
+button:hover{background:#383846}button.primary{background:#D71920;border-color:#D71920}button.ok{background:#1e7a3c;border-color:#1e7a3c}
+#chat{display:flex;flex-direction:column;border-inline-end:1px solid #2a2a33;min-height:0}
+#log{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.m{padding:8px 10px;border-radius:8px;max-width:92%;line-height:1.6;font-size:14px}.u{background:#2b2b35;align-self:flex-start}.a{background:#1d2a22;align-self:flex-end}.w{background:#3a2a1a}
+#sel{padding:6px 12px;font-size:12px;color:#ffb3b6;min-height:26px}
+#form{display:flex;gap:6px;padding:10px;border-top:1px solid #2a2a33}#form input{flex:1;padding:9px;border-radius:6px;border:1px solid #3a3a46;background:#0e0e12;color:#eee;font-family:inherit}
+#mid{display:flex;flex-direction:column;min-height:0}
+#bar{display:flex;gap:6px;padding:8px;flex-wrap:wrap;border-bottom:1px solid #2a2a33}
+#view{flex:1;position:relative;min-height:0}#three,#flat{position:absolute;inset:0;width:100%;height:100%}#flat{display:none;object-fit:contain;image-rendering:pixelated;cursor:crosshair;background:#2a2a30}
+#side{border-inline-start:1px solid #2a2a33;overflow:auto;padding:8px}
+.rev{padding:7px;border:1px solid #2a2a33;border-radius:6px;margin-bottom:6px;font-size:12px;cursor:pointer}.rev.cur{border-color:#D71920}
+#note{font-size:12px;color:#aaa;padding:6px 12px}
+.badge{font-size:11px;padding:2px 6px;border-radius:4px;background:#3a2a1a;color:#ffcf8a}
+</style></head>
+<body>
+<header><h1>مصمم أصول Roblox <span class="badge" id="tbadge">القالب: غير متحقق</span></h1>
+<button id="bnew">مشروع جديد</button><button id="btpl">تحقق من القالب الرسمي</button></header>
+<section id="chat"><div id="log"></div><div id="sel"></div>
+<form id="form"><input id="txt" placeholder="مثال: خفف الأحمر، كبّر الجيب، ثبّت البنطلون" autocomplete="off"><button class="primary">نفّذ</button></form></section>
+<section id="mid"><div id="bar">
+<button data-v="3d">مجسم</button><button data-v="shirt">قالب القميص</button><button data-v="pants">قالب البنطلون</button>
+<button id="bshow">إخفاء/إظهار البنطلون</button><button id="bcmp">قارن بالسابق</button>
+<button id="bundo">تراجع</button><button id="bok" class="ok">اعتمد</button><button id="bdl" class="primary">نزّل الملفات</button></div>
+<div id="note">المعاينة للتعديل وليست مطابقة بكسلية لـRoblox. في القالب المسطح: انقر عنصرًا لتحديده ثم اكتب «كبّر هذا».</div>
+<div id="view"><div id="three"></div><img id="flat"></div></section>
+<aside id="side"><b>الإصدارات</b><div id="revs"></div></aside>
+<script type="module">
+const $=s=>document.querySelector(s);let P=null,view="3d",selection=null,showPants=true,cmpRev=null;
+const log=(t,c)=>{const d=document.createElement("div");d.className="m "+c;d.textContent=t;$("#log").append(d);$("#log").scrollTop=1e9};
+const api=async(u,o)=>{const r=await fetch(u,o);if(!r.ok)throw new Error(await r.text());return r.json()};
+const url=(g,n=P.current.n,ext="png")=>`/api/projects/${P.id}/rev/${n}/${g}.${ext}`;
+async function load(id){P=await api("/api/projects/"+id);localStorage.setItem("pid",id);render()}
+function render(){const t=P.template.status;$("#tbadge").textContent="القالب: "+({passed:"متحقق",failed:"فشل التحقق",blocked:"تعذّر التنزيل",not_run:"غير متحقق"}[t]||t);
+ $("#revs").innerHTML="";P.revisions.slice().reverse().forEach(r=>{const d=document.createElement("div");d.className="rev"+(r.n===P.current.n?" cur":"")+(r.n===P.approved_rev?" appr":"");
+  d.textContent=`#${r.n} ${r.n===P.approved_rev?"✔ ":""}${r.message||r.command}`;d.onclick=async()=>{if(r.n!==P.current.n){P=await api(`/api/projects/${P.id}/restore/${r.n}`,{method:"POST"});render()}};$("#revs").append(d)});
+ show()}
+function show(){const img=$("#flat");$("#three").style.display=view==="3d"?"block":"none";img.style.display=view==="3d"?"none":"block";
+ if(view==="3d")update3d();else{img.src=url(view)+"?t="+Date.now();img.dataset.g=view}}
+// ---- معاينة ثلاثية الأبعاد (اختيارية: إن تعذّر تحميل Three.js يبقى القالب المسطح) ----
+let T=null,parts={};
+async function init3d(){try{const THREE=await import("https://unpkg.com/three@0.160.0/build/three.module.js");
+ const {OrbitControls}=await import("https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js");
+ const el=$("#three"),r=new THREE.WebGLRenderer({antialias:true});el.append(r.domElement);
+ const sc=new THREE.Scene();sc.background=new THREE.Color(0x22222a);const cam=new THREE.PerspectiveCamera(40,1,.1,100);cam.position.set(0,1,9);
+ sc.add(new THREE.AmbientLight(0xffffff,1.1));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(3,5,6);sc.add(dl);
+ const ctl=new OrbitControls(cam,r.domElement);ctl.target.set(0,0,0);
+ const dims={torso:[2,2,1,0,1,0],head:[1.2,1.2,1.2,0,2.7,0],limbA:[1,2,1,-1.5,1,0],limbB:[1,2,1,1.5,1,0],legA:[1,2,1,-.5,-1,0],legB:[1,2,1,.5,-1,0]};
+ for(const k in dims){const [w,h,d,x,y,z]=dims[k];const ms=Array.from({length:6},()=>new THREE.MeshStandardMaterial({color:0xd9a066}));
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),ms);m.position.set(x,y,z);sc.add(m);parts[k]=m}
+ const fit=()=>{const w=el.clientWidth,h=el.clientHeight;r.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix()};addEventListener("resize",fit);fit();
+ (function loop(){requestAnimationFrame(loop);ctl.update();r.render(sc,cam)})();T=THREE;update3d()}catch(e){$("#three").innerHTML='<p style="padding:20px">تعذّر تحميل المعاينة ثلاثية الأبعاد (تحتاج إنترنت). استخدم القالب المسطح.</p>'}}
+const REG={torso:{up:[231,8,128,64],right:[165,74,64,128],front:[231,74,128,128],left:[361,74,64,128],back:[427,74,128,128],down:[231,204,128,64]}};
+for(const [n,x0] of [["limbA",19],["limbB",308]]){REG[n]={};["right","front","left","back"].forEach((f,i)=>REG[n][f]=[x0+66*i,355,64,128]);REG[n].up=[x0+66,289,64,64];REG[n].down=[x0+66,485,64,64]}
+const loadImg=u=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u});
+async function update3d(){if(!T||!P)return;const THREE=T;const [sh,pa]=await Promise.all([loadImg(url("shirt")+"?t="+P.current.n),loadImg(url("pants")+"?t="+P.current.n)]);
+ // ترتيب مواد BoxGeometry: +x,-x,+y,-y,+z,-z ؛ الواجهة نحو +z ؛ يمين الشخصية = -x
+ const map={0:"left",1:"right",2:"up",3:"down",4:"front",5:"back"};
+ const tex=(srcs,part,face)=>{const [x,y,w,h]=REG[part][face];const c=document.createElement("canvas");c.width=w;c.height=h;const g=c.getContext("2d");
+  for(const s of srcs)g.drawImage(s,x,y,w,h,0,0,w,h);const t=new THREE.CanvasTexture(c);t.magFilter=THREE.NearestFilter;t.colorSpace=THREE.SRGBColorSpace;return t};
+ const set=(m,srcs,part)=>{for(let i=0;i<6;i++){m.material[i].map=tex(srcs,part,map[i]);m.material[i].color.set(0xffffff);m.material[i].needsUpdate=true}};
+ set(parts.torso,showPants?[pa,sh]:[sh],"torso");set(parts.limbA,[sh],"limbA");set(parts.limbB,[sh],"limbB");
+ parts.legA.visible=parts.legB.visible=showPants;if(showPants){set(parts.legA,[pa],"limbA");set(parts.legB,[pa],"limbB")}}
+// ---- تفاعل ----
+$("#form").onsubmit=async e=>{e.preventDefault();const t=$("#txt").value.trim();if(!t)return;$("#txt").value="";log(t,"u");
+ try{const r=await api(`/api/projects/${P.id}/command`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:t,selection})});
+  log(r.reply,r.ok?"a":"w");P=r.state;selection=null;$("#sel").textContent="";render()}catch(x){log("خطأ: "+x.message,"w")}};
+$("#flat").onclick=async e=>{const i=e.target,r=i.getBoundingClientRect();const s=Math.min(r.width/585,r.height/559);const ox=(r.width-585*s)/2,oy=(r.height-559*s)/2;
+ const x=(e.clientX-r.left-ox)/s,y=(e.clientY-r.top-oy)/s;const h=await api(`/api/projects/${P.id}/hit/${P.current.n}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({x,y,garment:i.dataset.g})});
+ selection=h.element?h:null;$("#sel").textContent=selection?`المحدد: ${selection.element} (${selection.garment})`:"لا عنصر هنا"};
+document.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{view=b.dataset.v;show()});
+$("#bshow").onclick=()=>{showPants=!showPants;update3d()};
+$("#bundo").onclick=async()=>{$("#txt").value="تراجع";$("#form").requestSubmit()};
+$("#bcmp").onclick=()=>{if(!P.current.parent)return log("لا يوجد إصدار سابق للمقارنة","w");view="shirt";const i=$("#flat");$("#three").style.display="none";i.style.display="block";
+ let f=false;const t=setInterval(()=>{f=!f;i.src=url("shirt",f?P.current.n:P.current.parent)+"?c="+Math.random()},900);setTimeout(()=>{clearInterval(t);show()},6000);log("مقارنة: يتبدّل القميص بين الحالي (#"+P.current.n+") والسابق (#"+P.current.parent+") لمدة 6 ثوانٍ","a")};
+$("#bok").onclick=async()=>{const r=await api(`/api/projects/${P.id}/approve/${P.current.n}`,{method:"POST"});P=r.state;log("اعتمدتُ الإصدار "+P.current.n+". "+r.note,"a");render()};
+$("#bdl").onclick=()=>{location.href=`/api/projects/${P.id}/package/${P.current.n}`};
+$("#bnew").onclick=async()=>{P=await api("/api/projects",{method:"POST"});log("أنشأت طقمًا جديدًا. اكتب ما تريد تعديله.","a");render()};
+$("#btpl").onclick=async()=>{log("أنزّل القالب الرسمي من Roblox وأتحقق من الخريطة…","a");const r=await api("/api/template/fetch",{method:"POST"});
+ log("نتيجة التحقق: "+r.status+(r.reason?" — "+r.reason:""),r.status==="passed"?"a":"w");P.template=r;render()};
+(async()=>{await init3d();const id=localStorage.getItem("pid");try{if(id)await load(id);else throw 0}catch{P=await api("/api/projects",{method:"POST"});render()}
+ log("أهلًا أمجدوه. هذا طقم BLACK VENOM الأول (اسم داخلي مؤقت). اكتب ما تريد تعديله.","a")})();
+</script></body></html>
