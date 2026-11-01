@@ -49,8 +49,8 @@ function show(){const img=$("#flat");$("#three").style.display=view==="3d"?"bloc
  if(view==="3d")update3d();else{img.src=url(view)+"?t="+Date.now();img.dataset.g=view}}
 // ---- معاينة ثلاثية الأبعاد (اختيارية: إن تعذّر تحميل Three.js يبقى القالب المسطح) ----
 let T=null,parts={};
-async function init3d(){try{const THREE=await import("https://unpkg.com/three@0.160.0/build/three.module.js");
- const {OrbitControls}=await import("https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js");
+async function init3d(){try{const THREE=await import("/vendor/three.module.js");
+ const {OrbitControls}=await import("/vendor/OrbitControls.js");
  const el=$("#three"),r=new THREE.WebGLRenderer({antialias:true});el.append(r.domElement);
  const sc=new THREE.Scene();sc.background=new THREE.Color(0x22222a);const cam=new THREE.PerspectiveCamera(40,1,.1,100);cam.position.set(0,1,9);
  sc.add(new THREE.AmbientLight(0xffffff,1.1));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(3,5,6);sc.add(dl);
@@ -59,7 +59,7 @@ async function init3d(){try{const THREE=await import("https://unpkg.com/three@0.
  for(const k in dims){const [w,h,d,x,y,z]=dims[k];const ms=Array.from({length:6},()=>new THREE.MeshStandardMaterial({color:0xd9a066}));
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),ms);m.position.set(x,y,z);sc.add(m);parts[k]=m}
  const fit=()=>{const w=el.clientWidth,h=el.clientHeight;r.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix()};addEventListener("resize",fit);fit();
- (function loop(){requestAnimationFrame(loop);ctl.update();r.render(sc,cam)})();T=THREE;update3d()}catch(e){$("#three").innerHTML='<p style="padding:20px">تعذّر تحميل المعاينة ثلاثية الأبعاد (تحتاج إنترنت). استخدم القالب المسطح.</p>'}}
+ (function loop(){requestAnimationFrame(loop);ctl.update();r.render(sc,cam)})();T=THREE;update3d()}catch(e){$("#three").innerHTML='<p style="padding:20px">تعذّر تحميل المعاينة ثلاثية الأبعاد (WebGL غير متاح؟ جرّب متصفحًا آخر). استخدم القالب المسطح.</p>'}}
 const REG={torso:{up:[231,8,128,64],right:[165,74,64,128],front:[231,74,128,128],left:[361,74,64,128],back:[427,74,128,128],down:[231,204,128,64]}};
 for(const [n,x0] of [["limbA",19],["limbB",308]]){REG[n]={};["right","front","left","back"].forEach((f,i)=>REG[n][f]=[x0+66*i,355,64,128]);REG[n].up=[x0+66,289,64,64];REG[n].down=[x0+66,485,64,64]}
 const loadImg=u=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u});

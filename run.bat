@@ -34,6 +34,7 @@ if errorlevel 1 (
 )
 echo Starting server... browser opens in 4 seconds.
 start "" /b powershell -NoProfile -Command "Start-Sleep 4; Start-Process 'http://127.0.0.1:8765'"
+python -m app.vendor_fetch
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8765
 echo.
 echo Server stopped. Read the messages above for the error.
