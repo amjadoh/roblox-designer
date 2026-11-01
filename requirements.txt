@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pillow
+psd-tools
+numpy
+trimesh
