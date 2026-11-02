@@ -15,6 +15,26 @@ os.makedirs(DATA, exist_ok=True)
 DB = os.path.join(DATA, "db.sqlite")
 app = FastAPI(title="مصمم أصول Roblox")
 
+# كلمة مرور اختيارية (HTTP Basic) للنشر على الإنترنت. محليًا بدون RD_PASSWORD ما فيه قفل.
+RD_USER, RD_PASSWORD = os.environ.get("RD_USER", "roblox"), os.environ.get("RD_PASSWORD", "")
+
+
+@app.middleware("http")
+async def basic_auth(request, call_next):
+    if RD_PASSWORD:
+        import base64, hmac
+        ok = False
+        h = request.headers.get("authorization", "")
+        if h.startswith("Basic "):
+            try:
+                u, _, p = base64.b64decode(h[6:]).decode("utf-8").partition(":")
+                ok = hmac.compare_digest(u.encode(), RD_USER.encode()) & hmac.compare_digest(p.encode(), RD_PASSWORD.encode())
+            except Exception:
+                ok = False
+        if not ok:
+            return Response("مطلوب تسجيل دخول", status_code=401, headers={"WWW-Authenticate": 'Basic realm="roblox"'})
+    return await call_next(request)
+
 
 def db():
     c = sqlite3.connect(DB); c.row_factory = sqlite3.Row

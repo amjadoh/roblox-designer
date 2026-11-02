@@ -1,0 +1,5 @@
+.git
+.venv
+data
+deploy/.env
+**/__pycache__
