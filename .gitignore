@@ -1,20 +1,5 @@
-.gradle/
-.kotlin/
-.idea/
-local.properties
-**/build/
-*.jks
-*.keystore
-*.p12
-*.pfx
 .env
 .env.*
-*.hprof
-*.dpapi
-**/ai-recovery-config.json
-
-/work/
-/release/
 
 # Python / runtime
 __pycache__/
