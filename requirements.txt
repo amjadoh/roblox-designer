@@ -4,3 +4,4 @@ pillow
 psd-tools
 numpy
 trimesh
+networkx
