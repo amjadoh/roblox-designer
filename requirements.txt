@@ -5,3 +5,4 @@ psd-tools
 numpy
 trimesh
 networkx
+httpx
