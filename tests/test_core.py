@@ -166,3 +166,24 @@ def test_psd_edit_saved_and_reopened():
 def test_template_regions_endpoint_matches_layout():
     r = c.get("/api/template/regions").json()
     assert r["limbA"]["up"] == [217, 289, 64, 64] and r["limbB"]["front"] == [308, 355, 64, 128]
+
+
+def test_free_request_queue_and_reply():
+    from app import design_cli
+    import argparse
+    p = new(); pid = p["id"]
+    r = c.post(f"/api/projects/{pid}/requests", json={"text": "  أبغى طقم تنين أزرق  ", "base_revision": p["current"]["n"]}).json()
+    assert r["ok"] and "وصل" in r["reply"]
+    lst = c.get(f"/api/projects/{pid}/requests").json()
+    assert lst[0]["text"] == "أبغى طقم تنين أزرق" and lst[0]["status"] == "pending"
+    design_cli.cmd_reply(argparse.Namespace(rid=r["id"], text="سويت لك طقم التنين 🐉", reject=False))
+    done = c.get(f"/api/projects/{pid}/requests").json()[0]
+    assert done["status"] == "done" and done["reply"].startswith("سويت") and done["reply_rev"] == p["current"]["n"]
+
+
+def test_free_request_limits():
+    p = new(); pid = p["id"]
+    assert c.post(f"/api/projects/{pid}/requests", json={"text": "   "}).status_code == 400
+    assert c.post(f"/api/projects/{pid}/requests", json={"text": "x" * 301}).status_code == 400
+    for i in range(3): assert c.post(f"/api/projects/{pid}/requests", json={"text": f"طلب {i}"}).status_code == 200
+    assert c.post(f"/api/projects/{pid}/requests", json={"text": "طلب رابع"}).status_code == 429

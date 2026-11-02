@@ -8,6 +8,8 @@
     python -m app.design_cli undo PID
     python -m app.design_cli check PID
     python -m app.design_cli package PID [--out FILE.zip]
+    python -m app.design_cli requests [--all]           # طلبات الموقع اللي تنتظر رد
+    python -m app.design_cli reply RID "الرد" [--reject] # رد على طلب (ويربطه بالإصدار الحالي)
 
 `set` يقبل فقط مفاتيح موجودة في DEFAULT_SPEC وبقيم صالحة؛ أي شي ثاني يُرفض قبل الرسم.
 """
@@ -122,6 +124,24 @@ def cmd_package(a):
     out({"ok": True, "zip": os.path.abspath(path)})
 
 
+def cmd_requests(a):
+    q = "SELECT id, project_id, base_rev, text, status, created FROM requests"
+    q += "" if a.all else " WHERE status='pending'"
+    out([dict(r) for r in main.db().execute(q + " ORDER BY id")])
+
+
+def cmd_reply(a):
+    c = main.db()
+    r = c.execute("SELECT project_id, status FROM requests WHERE id=?", (a.rid,)).fetchone()
+    if not r: out({"ok": False, "reason": "طلب غير موجود"}); return
+    if r["status"] != "pending": out({"ok": False, "reason": f"الطلب حالته {r['status']}، مو pending"}); return
+    rev = main.db().execute("SELECT current_rev FROM projects WHERE id=?", (r["project_id"],)).fetchone()[0]
+    c.execute("UPDATE requests SET status=?, reply=?, reply_rev=?, replied_at=? WHERE id=?",
+              ("rejected" if a.reject else "done", a.text[:600], rev, main.now(), a.rid))
+    c.commit()
+    out({"ok": True, "id": a.rid, "status": "rejected" if a.reject else "done", "reply_rev": rev})
+
+
 def build_parser():
     p = argparse.ArgumentParser(prog="design_cli"); s = p.add_subparsers(dest="cmd", required=True)
     x = s.add_parser("new"); x.add_argument("--name"); x.set_defaults(fn=cmd_new)
@@ -130,6 +150,9 @@ def build_parser():
         x = s.add_parser(name); x.add_argument("pid"); x.set_defaults(fn=fn)
     x = s.add_parser("set"); x.add_argument("pid"); x.add_argument("patch"); x.add_argument("--note"); x.set_defaults(fn=cmd_set)
     x = s.add_parser("package"); x.add_argument("pid"); x.add_argument("--out"); x.set_defaults(fn=cmd_package)
+    x = s.add_parser("requests"); x.add_argument("--all", action="store_true"); x.set_defaults(fn=cmd_requests)
+    x = s.add_parser("reply"); x.add_argument("rid", type=int); x.add_argument("text"); x.add_argument("--reject", action="store_true")
+    x.set_defaults(fn=cmd_reply)
     return p
 
 

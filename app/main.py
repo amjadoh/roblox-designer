@@ -43,6 +43,9 @@ def db():
     CREATE TABLE IF NOT EXISTS revisions(project_id TEXT, n INTEGER, parent INTEGER, command TEXT, message TEXT,
         spec TEXT, created TEXT, PRIMARY KEY(project_id, n));
     CREATE TABLE IF NOT EXISTS approvals(project_id TEXT, rev INTEGER, shirt_sha TEXT, pants_sha TEXT, created TEXT);
+    CREATE TABLE IF NOT EXISTS requests(id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT, base_rev INTEGER,
+        text TEXT, status TEXT DEFAULT 'pending', created TEXT, reply TEXT, reply_rev INTEGER, replied_at TEXT,
+        notified INTEGER DEFAULT 0);
     """)
     if "kind" not in [r[1] for r in c.execute("PRAGMA table_info(approvals)")]:
         c.execute("ALTER TABLE approvals ADD COLUMN kind TEXT DEFAULT 'design'"); c.commit()
@@ -145,6 +148,35 @@ def _command(pid, body):
         return {"ok": False, "reply": "لم يتغير شيء (قد يكون الجزء مثبّتًا أو بلغ الحد).", "state": st}
     n = make_rev(pid, cur["n"], spec, body.text, msg)
     return {"ok": True, "reply": f"{msg}. الإصدار {n} جاهز للمراجعة.", "state": project_state(pid)}
+
+
+class FreeRequest(BaseModel):
+    text: str
+    base_revision: int | None = None
+
+
+@app.post("/api/projects/{pid}/requests")
+def create_request(pid: str, body: FreeRequest):
+    """طلب حر يروح لكلود (Claude Code) عن طريق الطابور؛ ما يتنفذ أي شي تلقائيًا هنا."""
+    project_state(pid)  # 404 لو المشروع مو موجود
+    t = " ".join(body.text.split())
+    if not t: raise HTTPException(400, "طلب فاضي")
+    if len(t) > 300: raise HTTPException(400, "الطلب طويل، اختصره (300 حرف بالكثير)")
+    with WRITE_LOCK:
+        c = db()
+        if c.execute("SELECT COUNT(*) FROM requests WHERE project_id=? AND status='pending'", (pid,)).fetchone()[0] >= 3:
+            raise HTTPException(429, "عندك 3 طلبات تنتظر كلود. استنى لين يرد عليها.")
+        cur = c.execute("INSERT INTO requests(project_id, base_rev, text, created) VALUES(?,?,?,?)",
+                        (pid, body.base_revision, t, now()))
+        c.commit(); rid = cur.lastrowid
+    return {"ok": True, "id": rid, "reply": "وصل طلبك لكلود ✅ بيرد عليك هنا أول ما يخلص."}
+
+
+@app.get("/api/projects/{pid}/requests")
+def list_requests(pid: str):
+    rows = db().execute("SELECT id, base_rev, text, status, created, reply, reply_rev, replied_at FROM requests "
+                        "WHERE project_id=? ORDER BY id DESC LIMIT 20", (pid,))
+    return [dict(r) for r in rows]
 
 
 @app.post("/api/projects/{pid}/restore/{n}")
