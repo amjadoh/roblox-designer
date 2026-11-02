@@ -97,3 +97,17 @@ def test_design_cli_patch_validation():
                 {"pants": {"pattern": "logo"}}, {"locked": ["hat"]}, {"shirt": {"pocket": "yes"}}):
         with pytest.raises(SpecError):
             validate_patch(bad)
+
+
+def test_basic_auth_when_password_set():
+    import base64
+    from app import main as m
+    old = m.RD_PASSWORD; m.RD_PASSWORD = "s3cret"
+    try:
+        assert c.get("/api/projects").status_code == 401
+        bad = base64.b64encode(b"roblox:nope").decode()
+        assert c.get("/api/projects", headers={"Authorization": "Basic " + bad}).status_code == 401
+        good = base64.b64encode(b"roblox:s3cret").decode()
+        assert c.get("/api/projects", headers={"Authorization": "Basic " + good}).status_code == 200
+    finally:
+        m.RD_PASSWORD = old

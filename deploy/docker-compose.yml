@@ -1,0 +1,22 @@
+# نشر التطبيق خلف Traefik على https://roblox.amjadoh.io
+# التشغيل (من مجلد المشروع):  sudo docker compose -f deploy/docker-compose.yml up -d --build
+services:
+  roblox-designer:
+    build: ..
+    restart: unless-stopped
+    env_file: .env          # فيه RD_USER و RD_PASSWORD (ما ينرفع لـ git)
+    volumes:
+      # نفس مجلد data حق المشروع، عشان الوكيل (design_cli) والموقع يشوفون نفس التصاميم
+      - ../data:/app/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.roblox.rule=Host(`roblox.amjadoh.io`)
+      - traefik.http.routers.roblox.entrypoints=websecure
+      - traefik.http.routers.roblox.tls.certresolver=letsencrypt
+      - traefik.http.services.roblox.loadbalancer.server.port=8765
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
