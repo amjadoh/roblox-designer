@@ -2,67 +2,216 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>مصمم أصول Roblox</title>
+<title>مصمم روبلوكس</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Tahoma,"Segoe UI",sans-serif;background:#16161b;color:#eee;height:100vh;display:grid;grid-template-columns:360px 1fr 220px;grid-template-rows:auto 1fr}
-header{grid-column:1/-1;padding:10px 16px;background:#0e0e12;display:flex;gap:10px;align-items:center;border-bottom:1px solid #2a2a33}
-header h1{font-size:16px;margin:0;flex:1}
-button{background:#2b2b35;color:#eee;border:1px solid #3a3a46;border-radius:6px;padding:7px 12px;cursor:pointer;font-family:inherit}
-button:hover{background:#383846}button.primary{background:#D71920;border-color:#D71920}button.ok{background:#1e7a3c;border-color:#1e7a3c}
-#chat{display:flex;flex-direction:column;border-inline-end:1px solid #2a2a33;min-height:0}
-#log{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
-.m{padding:8px 10px;border-radius:8px;max-width:92%;line-height:1.6;font-size:14px}.u{background:#2b2b35;align-self:flex-start}.a{background:#1d2a22;align-self:flex-end}.w{background:#3a2a1a}
-#sel{padding:6px 12px;font-size:12px;color:#ffb3b6;min-height:26px}
-#form{display:flex;gap:6px;padding:10px;border-top:1px solid #2a2a33}#form input{flex:1;padding:9px;border-radius:6px;border:1px solid #3a3a46;background:#0e0e12;color:#eee;font-family:inherit}
-#mid{display:flex;flex-direction:column;min-height:0}
-#bar{display:flex;gap:6px;padding:8px;flex-wrap:wrap;border-bottom:1px solid #2a2a33}
-#view{flex:1;position:relative;min-height:0}#three,#flat{position:absolute;inset:0;width:100%;height:100%}#flat{display:none;object-fit:contain;image-rendering:pixelated;cursor:crosshair;background:#2a2a30}
-#side{border-inline-start:1px solid #2a2a33;overflow:auto;padding:8px}
-.rev{padding:7px;border:1px solid #2a2a33;border-radius:6px;margin-bottom:6px;font-size:12px;cursor:pointer}.rev.cur{border-color:#D71920}
-#note{font-size:12px;color:#aaa;padding:6px 12px}
-.badge{font-size:11px;padding:2px 6px;border-radius:4px;background:#3a2a1a;color:#ffcf8a}
+:root{--bg:#16161b;--panel:#1d1d24;--line:#2c2c37;--text:#eeeef2;--muted:#a3a3b0;--red:#D71920;--green:#1e7a3c;--card:#25252f;--card2:#30303c}
+*{box-sizing:border-box}
+body{margin:0;font-family:Tahoma,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;display:grid;
+ grid-template-columns:380px 1fr 200px;grid-template-rows:auto 1fr;overflow:hidden}
+header{grid-column:1/-1;padding:8px 14px;background:#0e0e12;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line)}
+header h1{font-size:16px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button{background:var(--card2);color:var(--text);border:1px solid #3c3c4a;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-size:14px}
+button:hover{background:#3a3a48}button:disabled{opacity:.5;cursor:wait}
+button.primary{background:var(--red);border-color:var(--red)}button.ok{background:var(--green);border-color:var(--green)}
+.badge{font-size:11px;padding:2px 6px;border-radius:4px;background:#3a2a1a;color:#ffcf8a;vertical-align:middle}
+/* اللوحة: تبويبات */
+#panel{display:flex;flex-direction:column;border-inline-end:1px solid var(--line);min-height:0;background:var(--panel)}
+#tabs{display:flex;border-bottom:1px solid var(--line)}
+#tabs button{flex:1;border:0;border-radius:0;background:transparent;padding:12px;font-size:15px;color:var(--muted)}
+#tabs button.on{color:var(--text);box-shadow:inset 0 -3px 0 var(--red)}
+.pane{flex:1;overflow:auto;min-height:0;display:none}.pane.on{display:flex;flex-direction:column}
+/* البطاقات */
+#design{padding:12px;gap:14px}
+.step h3{margin:0 0 8px;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.card{background:var(--card);border:2px solid transparent;border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer;font-size:13px;line-height:1.4;user-select:none}
+.card:hover{border-color:#4a4a5a}.card .e{font-size:28px;display:block}
+.card.on{border-color:var(--red)}
+.pal{display:flex;justify-content:center;gap:3px;margin-top:4px}.pal i{width:16px;height:16px;border-radius:50%;border:1px solid #0006}
+#surprise{width:100%;padding:14px;font-size:17px;background:linear-gradient(90deg,#6A2BB8,#D71920);border:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--card);border:2px solid transparent;border-radius:20px;padding:6px 12px;cursor:pointer;font-size:13px}
+.chip.on{border-color:#1e9e4a;background:#1d2a22}
+.sw{display:flex;flex-wrap:wrap;gap:6px}.sw button{width:30px;height:30px;padding:0;border-radius:50%;border:2px solid #0008}
+/* المحادثة */
+#chatpane{min-height:0}
+#log{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.m{padding:8px 10px;border-radius:10px;max-width:92%;line-height:1.6;font-size:14px;white-space:pre-wrap}
+.u{background:var(--card2);align-self:flex-start}.a{background:#1d2a22;align-self:flex-end}.w{background:#3a2a1a;align-self:flex-end}
+#form{display:flex;gap:6px;padding:10px;border-top:1px solid var(--line);flex-wrap:wrap}
+#form input{flex:1 1 160px;padding:10px;border-radius:8px;border:1px solid #3a3a46;background:#0e0e12;color:var(--text);font-family:inherit;font-size:15px}
+.hint{font-size:12px;color:var(--muted);padding:0 12px 8px}
+/* المعاينة */
+#mid{display:flex;flex-direction:column;min-height:0;min-width:0;position:relative}
+#bar{display:flex;gap:6px;padding:8px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+#bar .sep{flex:1}
+#view{flex:1;position:relative;min-height:0;overflow:hidden}
+#three,#flat{position:absolute;inset:0;width:100%;height:100%}
+#flat{display:none;object-fit:contain;image-rendering:pixelated;cursor:crosshair;background:#2a2a30}
+#toast{position:absolute;top:10px;inset-inline:10px;margin:auto;max-width:420px;background:#1d2a22;border:1px solid #2e5e3a;border-radius:10px;padding:8px 12px;text-align:center;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none}
+#toast.show{opacity:1}#toast.w{background:#3a2a1a;border-color:#6a4a2a}
+#seltool{position:absolute;bottom:10px;inset-inline:10px;margin:auto;max-width:520px;background:#0e0e12ee;border:1px solid var(--red);border-radius:12px;padding:10px;display:none;gap:8px;flex-direction:column}
+#seltool.show{display:flex}#seltool .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#seltool b{flex:1}
+#hilite{position:absolute;border:2px dashed #ffeb3b;border-radius:3px;pointer-events:none;display:none;box-shadow:0 0 0 2000px #0005}
+/* الإصدارات */
+#side{border-inline-start:1px solid var(--line);overflow:auto;padding:8px;background:var(--panel)}
+.rev{padding:7px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;font-size:12px;cursor:pointer}.rev.cur{border-color:var(--red)}.rev:hover{background:var(--card)}
+/* الجوال */
+@media (max-width:900px){
+ body{grid-template-columns:1fr;grid-template-rows:auto 46vh 1fr;overflow:auto;height:auto;min-height:100dvh}
+ #mid{grid-row:2;border-bottom:1px solid var(--line)}#panel{grid-row:3;border:0}#side{display:none}
+ #bar{gap:4px;padding:6px}#bar button{white-space:nowrap;padding:6px 8px;font-size:13px;flex:1 1 auto}#bar .sep{display:none}
+ #seltool{position:static;margin:8px;max-width:none}
+ body{grid-template-rows:auto auto 1fr}#view{height:46vh;flex:none}
+ .pane.on{overflow:visible}#log{max-height:50vh}
+ header h1{font-size:14px}#btpl{display:none}
+}
 </style></head>
 <body>
-<header><h1>مصمم أصول Roblox <span class="badge" id="tbadge">القالب: غير متحقق</span></h1>
-<button id="bnew">مشروع جديد</button><button id="btpl">تحقق من القالب الرسمي</button></header>
-<section id="chat"><div id="log"></div><div id="sel"></div>
-<form id="form"><input id="txt" placeholder="مثال: خفف الأحمر، كبّر الجيب، ثبّت البنطلون" autocomplete="off"><button class="primary">نفّذ</button><button type="button" id="bask" title="أي طلب حر يروح لكلود ويرد عليك هنا">اسأل كلود 💬</button></form></section>
+<header><h1>🎨 مصمم روبلوكس <span class="badge" id="tbadge">القالب: …</span></h1>
+<button id="bnew">طقم جديد</button><button id="btpl">تحقق من القالب</button></header>
+
+<section id="panel">
+ <div id="tabs"><button data-t="design" class="on">🎨 صمّم</button><button data-t="chatpane">💬 كلّمني</button></div>
+ <div id="design" class="pane on">
+  <button id="surprise">🎲 فاجئني!</button>
+  <div class="step"><h3>١. اختر ستايل</h3><div class="grid" id="styles"></div></div>
+  <div class="step"><h3>٢. اختر الألوان</h3><div class="grid" id="palettes"></div></div>
+  <div class="step"><h3>٣. النقش</h3><div class="chips" id="patterns"></div></div>
+  <div class="step"><h3>٤. الإضافات</h3><div class="chips" id="extras"></div></div>
+  <div class="step"><h3>🖌️ لون مخصص</h3>
+   <div class="chips" style="margin-bottom:8px"><span class="chip on" data-slot="base">اللون الأساسي</span><span class="chip" data-slot="accent">لون التفاصيل</span>
+    <span class="chip on" data-gar="both">الطقم كله</span><span class="chip" data-gar="shirt">الهودي</span><span class="chip" data-gar="pants">البنطلون</span></div>
+   <div class="sw" id="swatches"></div></div>
+  <p class="hint">👆 تقدر تضغط على أي جزء في «قالب القميص» أو «قالب البنطلون» وتعدّله لحاله.</p>
+ </div>
+ <div id="chatpane" class="pane">
+  <div id="log"></div>
+  <p class="hint">«نفّذ» للأوامر السريعة مثل: خفف الأحمر، كبّر الجيب، ثبّت البنطلون، تراجع.<br>«اسأل كلود» لأي فكرة ثانية، وكلود يرد عليك هنا.</p>
+  <form id="form"><input id="txt" placeholder="اكتب هنا…" autocomplete="off"><button class="primary">نفّذ</button><button type="button" id="bask">اسأل كلود 💬</button></form>
+ </div>
+</section>
+
 <section id="mid"><div id="bar">
-<button data-v="3d">مجسم</button><button data-v="shirt">قالب القميص</button><button data-v="pants">قالب البنطلون</button>
-<button id="bshow">إخفاء/إظهار البنطلون</button><button id="bcmp">قارن بالسابق</button>
-<button id="bundo">تراجع</button><button id="bok" class="ok">اعتمد</button><button id="bdl" class="primary">نزّل الملفات</button></div>
-<div id="note">المعاينة للتعديل وليست مطابقة بكسلية لـRoblox. في القالب المسطح: انقر عنصرًا لتحديده ثم اكتب «كبّر هذا».</div>
-<div id="view"><div id="three"></div><img id="flat"></div></section>
+ <button data-v="3d">🧍 مجسم</button><button data-v="shirt">👕 قالب القميص</button><button data-v="pants">👖 قالب البنطلون</button>
+ <button id="bshow">إخفاء البنطلون</button><span class="sep"></span>
+ <button id="bundo">↩️ تراجع</button><button id="bcmp">قارن</button><button id="bok" class="ok">✔ اعتمد</button><button id="bdl" class="primary">⬇ نزّل الملفات</button></div>
+ <div id="view"><div id="three"></div><img id="flat" alt="القالب"><div id="hilite"></div>
+  <div id="toast"></div>
+ </div>
+ <div id="seltool"><div class="row"><b id="selname"></b><button id="selx">✕</button></div>
+  <div class="row" id="selbtns"></div><div class="sw" id="selsw"></div></div>
+</section>
 <aside id="side"><b>الإصدارات</b><div id="revs"></div></aside>
+
 <script type="module">
-const $=s=>document.querySelector(s);let P=null,view="3d",selection=null,showPants=true,cmpRev=null;
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+let P=null,LIB=null,view="3d",selection=null,showPants=true,busy=false;
 const log=(t,c)=>{const d=document.createElement("div");d.className="m "+c;d.textContent=t;$("#log").append(d);$("#log").scrollTop=1e9};
-const api=async(u,o)=>{const r=await fetch(u,o);if(!r.ok)throw new Error(await r.text());return r.json()};
+let toastT;const toast=(t,warn)=>{const e=$("#toast");e.textContent=t;e.className="show"+(warn?" w":"");clearTimeout(toastT);toastT=setTimeout(()=>e.className="",2600)};
+const api=async(u,o)=>{const r=await fetch(u,o);if(!r.ok){let m=await r.text();try{m=JSON.parse(m).detail||m}catch{}throw new Error(m)}return r.json()};
+const post=(u,b)=>api(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})});
 const url=(g,n=P.current.n,ext="png")=>`/api/projects/${P.id}/rev/${n}/${g}.${ext}`;
+const SWATCHES=["#18181E","#4A5060","#EDEBE6","#D71920","#FF6A1A","#E0B43A","#F2E04A","#7CFF3A","#1E9E4A","#2E5E3A","#7FD3FF","#1F4FD8","#10205A","#6A2BB8","#E86BA8","#C2A878","#5A3A22","#8A7350"];
+
 async function load(id){P=await api("/api/projects/"+id);localStorage.setItem("pid",id);render()}
-function render(){const t=P.template.status;$("#tbadge").textContent="القالب: "+({passed:"متحقق",failed:"فشل التحقق",blocked:"تعذّر التنزيل",not_run:"غير متحقق"}[t]||t);
- $("#revs").innerHTML="";P.revisions.slice().reverse().forEach(r=>{const d=document.createElement("div");d.className="rev"+(r.n===P.current.n?" cur":"")+(r.n===P.approved_rev?" appr":"");
-  d.textContent=`#${r.n} ${r.n===P.approved_rev?"✔ ":""}${r.message||r.command}`;d.onclick=async()=>{if(r.n!==P.current.n){P=await api(`/api/projects/${P.id}/restore/${r.n}?base_revision=${P.current.n}`,{method:"POST"});render()}};$("#revs").append(d)});
- show()}
+function render(){const t=P.template.status;$("#tbadge").textContent="القالب: "+({passed:"متحقق ✓",failed:"فشل التحقق",blocked:"تعذّر التنزيل",not_run:"غير متحقق"}[t]||t);
+ $("#revs").innerHTML="";P.revisions.slice().reverse().forEach(r=>{const d=document.createElement("div");d.className="rev"+(r.n===P.current.n?" cur":"");
+  d.textContent=`#${r.n} ${r.n===P.approved_rev?"✔ ":""}${r.message||r.command}`;
+  d.onclick=async()=>{if(r.n===P.current.n)return;try{P=await api(`/api/projects/${P.id}/restore/${r.n}?base_revision=${P.current.n}`,{method:"POST"});toast("رجعت لنسخة #"+r.n);render()}catch(x){toast(x.message,1)}};$("#revs").append(d)});
+ syncCards();show()}
 function show(){const img=$("#flat");$("#three").style.display=view==="3d"?"block":"none";img.style.display=view==="3d"?"none":"block";
- if(view==="3d")update3d();else{img.src=url(view)+"?t="+Date.now();img.dataset.g=view}}
-// ---- معاينة ثلاثية الأبعاد (اختيارية: إن تعذّر تحميل Three.js يبقى القالب المسطح) ----
-let T=null,parts={};
-async function init3d(){try{const THREE=await import("/vendor/three.module.js");
- const {OrbitControls}=await import("/vendor/OrbitControls.js");
+ $$("#bar [data-v]").forEach(b=>b.classList.toggle("primary",b.dataset.v===view));
+ if(view==="3d"){update3d();hideSel()}else{img.src=url(view)+"?t="+P.current.n;img.dataset.g=view;if(selection&&selection.garment!==view)hideSel()}}
+
+// ---- تطبيق أزرار التصميم ----
+async function act(body){if(busy)return;busy=true;$$("button").forEach(b=>b.disabled=true);
+ try{const r=await post(`/api/projects/${P.id}/apply`,{...body,base_revision:P.current.n});P=r.state;toast(r.reply,!r.ok);if(r.ok)log(r.reply,"a");render();
+  if(selection)reselect()}catch(x){toast("خطأ: "+x.message,1)}finally{busy=false;$$("button").forEach(b=>b.disabled=false)}}
+
+function buildLibrary(){
+ const card=(e,name,extra,on)=>{const d=document.createElement("div");d.className="card";d.innerHTML=`<span class="e">${e}</span>${name}${extra||""}`;d.onclick=on;return d};
+ LIB.styles.forEach(s=>{const c=card(s.emoji,s.name,"",()=>act({action:"style",style:s.id}));c.dataset.style=s.id;$("#styles").append(c)});
+ LIB.palettes.forEach(p=>{const c=card(p.emoji,p.name,`<div class="pal"><i style="background:${p.shirt}"></i><i style="background:${p.accent}"></i><i style="background:${p.pants}"></i></div>`,()=>act({action:"palette",palette:p.id}));c.dataset.pal=p.id;$("#palettes").append(c)});
+ LIB.patterns.forEach(p=>{const c=document.createElement("span");c.className="chip";c.textContent=p.emoji+" "+p.name;c.dataset.pat=p.id;c.onclick=()=>act({action:"pattern",value:p.id,garment:"shirt"});$("#patterns").append(c)});
+ LIB.extras.forEach(x=>{const c=document.createElement("span");c.className="chip";c.textContent=x.emoji+" "+x.name;c.dataset.ex=x.key;c.dataset.g=x.garment;c.onclick=()=>act({action:"toggle",key:x.key,garment:x.garment});$("#extras").append(c)});
+ SWATCHES.forEach(h=>{const b=document.createElement("button");b.style.background=h;b.title=h;b.onclick=()=>{const slot=$("[data-slot].on").dataset.slot,g=$("[data-gar].on").dataset.gar;
+  act({action:"color",slot,hex:h,garment:g==="both"?null:g})};$("#swatches").append(b)});
+ $$("[data-slot]").forEach(c=>c.onclick=()=>{$$("[data-slot]").forEach(x=>x.classList.remove("on"));c.classList.add("on")});
+ $$("[data-gar]").forEach(c=>c.onclick=()=>{$$("[data-gar]").forEach(x=>x.classList.remove("on"));c.classList.add("on")});
+}
+function syncCards(){if(!LIB||!P)return;const s=P.current.spec;
+ $$("#palettes .card").forEach(c=>{const p=LIB.palettes.find(x=>x.id===c.dataset.pal);c.classList.toggle("on",p.shirt===s.shirt.colors.base&&p.accent===s.shirt.colors.accent&&p.pants===s.pants.colors.base)});
+ $$("#patterns .chip").forEach(c=>c.classList.toggle("on",c.dataset.pat===s.shirt.pattern));
+ $$("#extras .chip").forEach(c=>c.classList.toggle("on",!!s[c.dataset.g][c.dataset.ex]))}
+$("#surprise").onclick=()=>act({action:"surprise"});
+
+// ---- تحديد جزء بالنقر على القالب + شريط التعديل ----
+const NAMES={base:"القماش",pocket:"جيب الصدر",emblem:"الشعار",sleeve_stripe:"خط الأكمام",collar:"الياقة",hem:"الحاشية",cuff:"الأساور",drawstrings:"حبال الهودي",
+ cargo_pocket:"جيب الكارجو",belt:"الحزام",knee_seams:"خياطة الركبة",pattern:"النقش"};
+const SCALABLE=["pocket","emblem","cargo_pocket"],TOGGLE={shirt:["pocket","emblem","sleeve_stripe","collar","hem","cuff","drawstrings"],pants:["cargo_pocket","belt","cuff","knee_seams"]};
+function hideSel(){selection=null;$("#seltool").classList.remove("show");$("#hilite").style.display="none"}
+$("#selx").onclick=hideSel;
+function drawHilite(){const i=$("#flat"),r=i.getBoundingClientRect(),v=$("#view").getBoundingClientRect();const s=Math.min(r.width/585,r.height/559);
+ const ox=(r.width-585*s)/2+r.left-v.left,oy=(r.height-559*s)/2+r.top-v.top;const [x,y,w,h]=selection.box;const H=$("#hilite");
+ Object.assign(H.style,{display:"block",left:ox+x*s+"px",top:oy+y*s+"px",width:w*s+"px",height:h*s+"px"})}
+function showSel(){const el=selection.element,g=selection.garment;$("#selname").textContent="✏️ "+(NAMES[el]||el)+" — "+(g==="shirt"?"الهودي":"البنطلون");
+ const B=$("#selbtns");B.innerHTML="";const btn=(t,f)=>{const b=document.createElement("button");b.textContent=t;b.onclick=f;B.append(b)};
+ if(SCALABLE.includes(el)){btn("➕ كبّر",()=>act({action:"scale",key:el,factor:1.2}));btn("➖ صغّر",()=>act({action:"scale",key:el,factor:.83}))}
+ if(TOGGLE[g].includes(el))btn("🗑️ شيله",()=>{act({action:"toggle",key:el,garment:g,value:false});hideSel()});
+ if(el==="base"||el==="pattern")LIB.patterns.forEach(p=>btn(p.emoji+" "+p.name,()=>act({action:"pattern",value:p.id,garment:g})));
+ const slot=el==="base"?"base":"accent";const S=$("#selsw");S.innerHTML="";
+ SWATCHES.forEach(h=>{const b=document.createElement("button");b.style.background=h;b.title=h;b.onclick=()=>act({action:"color",slot,hex:h,garment:g});S.append(b)});
+ $("#seltool").classList.add("show");drawHilite()}
+async function reselect(){if(view==="3d"||!selection)return hideSel();const b=selection.box;await pick(b[0]+b[2]/2,b[1]+b[3]/2,true)}
+async function pick(x,y,quiet){const h=await post(`/api/projects/${P.id}/hit/${P.current.n}`,{x,y,garment:$("#flat").dataset.g});
+ if(h.element){selection=h;showSel()}else{hideSel();if(!quiet)toast("ما فيه شي هنا، اضغط على جزء من الملابس",1)}}
+$("#flat").onclick=e=>{const i=e.target,r=i.getBoundingClientRect();const s=Math.min(r.width/585,r.height/559);const ox=(r.width-585*s)/2,oy=(r.height-559*s)/2;
+ pick((e.clientX-r.left-ox)/s,(e.clientY-r.top-oy)/s)};
+addEventListener("resize",()=>{if(selection)drawHilite()});
+
+// ---- المحادثة: أوامر سريعة + طلبات حرة لكلود ----
+$("#form").onsubmit=async e=>{e.preventDefault();const t=$("#txt").value.trim();if(!t)return;$("#txt").value="";log(t,"u");
+ try{const r=await post(`/api/projects/${P.id}/command`,{text:t,selection,base_revision:P.current.n});
+  log(r.ok?r.reply:r.reply+"\nإذا فكرتك مختلفة، اكتبها واضغط «اسأل كلود» 💬",r.ok?"a":"w");P=r.state;render()}catch(x){log("خطأ: "+x.message,"w")}};
+const seenReplies=new Set(JSON.parse(localStorage.getItem("seenReplies")||"[]"));
+$("#bask").onclick=async()=>{const t=$("#txt").value.trim();if(!t)return log("اكتب فكرتك أول، بعدين اضغط «اسأل كلود».","w");$("#txt").value="";log(t,"u");
+ try{const r=await post(`/api/projects/${P.id}/requests`,{text:t,base_revision:P.current.n});log(r.reply,"a")}catch(x){log("ما وصل الطلب: "+x.message,"w")}};
+async function pollReplies(){if(!P)return;try{const rs=await api(`/api/projects/${P.id}/requests`);let changed=false;
+ for(const r of rs.slice().reverse()){if(r.status!=="pending"&&r.reply&&!seenReplies.has(r.id)){seenReplies.add(r.id);changed=true;log("كلود: "+r.reply,r.status==="done"?"a":"w");toast("كلود رد عليك 💬")}}
+ if(changed){localStorage.setItem("seenReplies",JSON.stringify([...seenReplies].slice(-200)));P=await api("/api/projects/"+P.id);render()}}catch{}}
+setInterval(pollReplies,8000);
+
+// ---- التبويبات والأزرار ----
+$$("#tabs button").forEach(b=>b.onclick=()=>{$$("#tabs button").forEach(x=>x.classList.toggle("on",x===b));$$(".pane").forEach(p=>p.classList.toggle("on",p.id===b.dataset.t))});
+$$("[data-v]").forEach(b=>b.onclick=()=>{view=b.dataset.v;hideSel();show();if(view!=="3d")toast("اضغط على أي جزء عشان تعدّله 👆")});
+$("#bshow").onclick=()=>{showPants=!showPants;$("#bshow").textContent=showPants?"إخفاء البنطلون":"إظهار البنطلون";update3d()};
+$("#bundo").onclick=async()=>{try{const r=await post(`/api/projects/${P.id}/command`,{text:"تراجع",base_revision:P.current.n});toast(r.reply,!r.ok);P=r.state;render()}catch(x){toast(x.message,1)}};
+$("#bcmp").onclick=()=>{if(!P.current.parent)return toast("ما فيه نسخة قبلها للمقارنة",1);if(view==="3d")view="shirt";hideSel();const i=$("#flat");$("#three").style.display="none";i.style.display="block";
+ let f=false;const t=setInterval(()=>{f=!f;i.src=url(view,f?P.current.parent:P.current.n);toast(f?"قبل (#"+P.current.parent+")":"بعد (#"+P.current.n+")")},900);setTimeout(()=>{clearInterval(t);show()},6000)};
+$("#bok").onclick=async()=>{const r=await post(`/api/projects/${P.id}/approve/${P.current.n}`);P=r.state;toast("اعتمدت التصميم ✔ (اعتماد تصميم بس، بدون رفع ولا دفع)");render()};
+$("#bdl").onclick=()=>{location.href=`/api/projects/${P.id}/package/${P.current.n}`};
+$("#bnew").onclick=async()=>{P=await api("/api/projects",{method:"POST"});localStorage.setItem("pid",P.id);hideSel();toast("طقم جديد! اختر ستايل 🎨");render()};
+$("#btpl").onclick=async()=>{toast("أتحقق من قالب روبلوكس الرسمي…");const r=await api("/api/template/fetch",{method:"POST"});toast("نتيجة التحقق: "+r.status,r.status!=="passed");P.template=r;render()};
+
+// ---- معاينة ثلاثية الأبعاد ----
+let T=null,parts={},REG=null;
+async function init3d(){try{const THREE=await import("/vendor/three.module.js");const {OrbitControls}=await import("/vendor/OrbitControls.js");
  const el=$("#three"),r=new THREE.WebGLRenderer({antialias:true});el.append(r.domElement);
  const sc=new THREE.Scene();sc.background=new THREE.Color(0x22222a);const cam=new THREE.PerspectiveCamera(40,1,.1,100);cam.position.set(0,1,9);
  sc.add(new THREE.AmbientLight(0xffffff,1.1));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(3,5,6);sc.add(dl);
- const ctl=new OrbitControls(cam,r.domElement);ctl.target.set(0,0,0);
+ const ctl=new OrbitControls(cam,r.domElement);ctl.target.set(0,0.5,0);ctl.autoRotate=true;ctl.autoRotateSpeed=1.2;r.domElement.addEventListener("pointerdown",()=>ctl.autoRotate=false);
  const dims={torso:[2,2,1,0,1,0],head:[1.2,1.2,1.2,0,2.7,0],limbA:[1,2,1,-1.5,1,0],limbB:[1,2,1,1.5,1,0],legA:[1,2,1,-.5,-1,0],legB:[1,2,1,.5,-1,0]};
  for(const k in dims){const [w,h,d,x,y,z]=dims[k];const ms=Array.from({length:6},()=>new THREE.MeshStandardMaterial({color:0xd9a066}));
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),ms);m.position.set(x,y,z);sc.add(m);parts[k]=m}
- const fit=()=>{const w=el.clientWidth,h=el.clientHeight;r.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix()};addEventListener("resize",fit);fit();
- (function loop(){requestAnimationFrame(loop);ctl.update();r.render(sc,cam)})();T=THREE;update3d()}catch(e){$("#three").innerHTML='<p style="padding:20px">تعذّر تحميل المعاينة ثلاثية الأبعاد (WebGL غير متاح؟ جرّب متصفحًا آخر). استخدم القالب المسطح.</p>'}}
-let REG=null; // خريطة القالب من السيرفر (مصدر واحد مطابق للقالب الرسمي)
+ const fit=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;r.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix()};addEventListener("resize",fit);new ResizeObserver(fit).observe(el);fit();
+ (function loop(){requestAnimationFrame(loop);ctl.update();r.render(sc,cam)})();T=THREE;update3d()}
+ catch(e){$("#three").innerHTML='<p style="padding:20px">ما قدرت أشغّل المجسم ثلاثي الأبعاد على هالجهاز. استخدم «قالب القميص» و«قالب البنطلون».</p>'}}
 const loadImg=u=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u});
-async function update3d(){if(!T||!P)return;const THREE=T;if(!REG)REG=await api("/api/template/regions");const [sh,pa]=await Promise.all([loadImg(url("shirt")+"?t="+P.current.n),loadImg(url("pants")+"?t="+P.current.n)]);
+async function update3d(){if(!T||!P)return;const THREE=T;if(!REG)REG=await api("/api/template/regions");
+ const [sh,pa]=await Promise.all([loadImg(url("shirt")),loadImg(url("pants"))]);
  // ترتيب مواد BoxGeometry: +x,-x,+y,-y,+z,-z ؛ الواجهة نحو +z ؛ يمين الشخصية = -x
  const map={0:"left",1:"right",2:"up",3:"down",4:"front",5:"back"};
  const tex=(srcs,part,face)=>{const [x,y,w,h]=REG[part][face];const c=document.createElement("canvas");c.width=w;c.height=h;const g=c.getContext("2d");
@@ -70,32 +219,8 @@ async function update3d(){if(!T||!P)return;const THREE=T;if(!REG)REG=await api("
  const set=(m,srcs,part)=>{for(let i=0;i<6;i++){m.material[i].map=tex(srcs,part,map[i]);m.material[i].color.set(0xffffff);m.material[i].needsUpdate=true}};
  set(parts.torso,showPants?[pa,sh]:[sh],"torso");set(parts.limbA,[sh],"limbA");set(parts.limbB,[sh],"limbB");
  parts.legA.visible=parts.legB.visible=showPants;if(showPants){set(parts.legA,[pa],"limbA");set(parts.legB,[pa],"limbB")}}
-// ---- تفاعل ----
-$("#form").onsubmit=async e=>{e.preventDefault();const t=$("#txt").value.trim();if(!t)return;$("#txt").value="";log(t,"u");
- try{const r=await api(`/api/projects/${P.id}/command`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:t,selection,base_revision:P.current.n})});
-  log(r.reply,r.ok?"a":"w");P=r.state;selection=null;$("#sel").textContent="";render()}catch(x){log("خطأ: "+x.message,"w")}};
-$("#flat").onclick=async e=>{const i=e.target,r=i.getBoundingClientRect();const s=Math.min(r.width/585,r.height/559);const ox=(r.width-585*s)/2,oy=(r.height-559*s)/2;
- const x=(e.clientX-r.left-ox)/s,y=(e.clientY-r.top-oy)/s;const h=await api(`/api/projects/${P.id}/hit/${P.current.n}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({x,y,garment:i.dataset.g})});
- selection=h.element?h:null;$("#sel").textContent=selection?`المحدد: ${selection.element} (${selection.garment})`:"لا عنصر هنا"};
-document.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{view=b.dataset.v;show()});
-$("#bshow").onclick=()=>{showPants=!showPants;update3d()};
-$("#bundo").onclick=async()=>{$("#txt").value="تراجع";$("#form").requestSubmit()};
-$("#bcmp").onclick=()=>{if(!P.current.parent)return log("لا يوجد إصدار سابق للمقارنة","w");view="shirt";const i=$("#flat");$("#three").style.display="none";i.style.display="block";
- let f=false;const t=setInterval(()=>{f=!f;i.src=url("shirt",f?P.current.n:P.current.parent)+"?c="+Math.random()},900);setTimeout(()=>{clearInterval(t);show()},6000);log("مقارنة: يتبدّل القميص بين الحالي (#"+P.current.n+") والسابق (#"+P.current.parent+") لمدة 6 ثوانٍ","a")};
-$("#bok").onclick=async()=>{const r=await api(`/api/projects/${P.id}/approve/${P.current.n}`,{method:"POST"});P=r.state;log("اعتمدتُ الإصدار "+P.current.n+". "+r.note,"a");render()};
-// ---- طلبات حرة لكلود (طابور على السيرفر؛ كلود يرد من Claude Code) ----
-const seenReplies=new Set(JSON.parse(localStorage.getItem("seenReplies")||"[]"));
-$("#bask").onclick=async()=>{const t=$("#txt").value.trim();if(!t)return log("اكتب طلبك أول، بعدين اضغط «اسأل كلود».","w");$("#txt").value="";log(t,"u");
- try{const r=await api(`/api/projects/${P.id}/requests`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:t,base_revision:P.current.n})});log(r.reply,"a")}
- catch(x){log("ما وصل الطلب: "+x.message,"w")}};
-async function pollReplies(){if(!P)return;try{const rs=await api(`/api/projects/${P.id}/requests`);let changed=false;
- for(const r of rs.slice().reverse()){if(r.status!=="pending"&&r.reply&&!seenReplies.has(r.id)){seenReplies.add(r.id);changed=true;log("كلود: "+r.reply,r.status==="done"?"a":"w")}}
- if(changed){localStorage.setItem("seenReplies",JSON.stringify([...seenReplies].slice(-200)));P=await api("/api/projects/"+P.id);render()}}catch{}}
-setInterval(pollReplies,8000);
-$("#bdl").onclick=()=>{location.href=`/api/projects/${P.id}/package/${P.current.n}`};
-$("#bnew").onclick=async()=>{P=await api("/api/projects",{method:"POST"});log("أنشأت طقمًا جديدًا. اكتب ما تريد تعديله.","a");render()};
-$("#btpl").onclick=async()=>{log("أنزّل القالب الرسمي من Roblox وأتحقق من الخريطة…","a");const r=await api("/api/template/fetch",{method:"POST"});
- log("نتيجة التحقق: "+r.status+(r.reason?" — "+r.reason:""),r.status==="passed"?"a":"w");P.template=r;render()};
-(async()=>{await init3d();const id=localStorage.getItem("pid");try{if(id)await load(id);else throw 0}catch{P=await api("/api/projects",{method:"POST"});render()}
- log("أهلًا أمجدوه. هذا طقم BLACK VENOM الأول (اسم داخلي مؤقت). اكتب ما تريد تعديله.","a")})();
+
+(async()=>{LIB=await api("/api/library");buildLibrary();await init3d();const id=localStorage.getItem("pid");
+ try{if(id)await load(id);else throw 0}catch{P=await api("/api/projects",{method:"POST"});localStorage.setItem("pid",P.id);render()}
+ log("هلا! 👋 اختر ستايل من «صمّم»، أو اكتب لي هنا وش تبغى.","a")})();
 </script></body></html>

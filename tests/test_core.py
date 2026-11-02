@@ -187,3 +187,26 @@ def test_free_request_limits():
     assert c.post(f"/api/projects/{pid}/requests", json={"text": "x" * 301}).status_code == 400
     for i in range(3): assert c.post(f"/api/projects/{pid}/requests", json={"text": f"طلب {i}"}).status_code == 200
     assert c.post(f"/api/projects/{pid}/requests", json={"text": "طلب رابع"}).status_code == 429
+
+
+def test_library_actions_apply_and_respect_locks():
+    p = new(); pid = p["id"]
+    lib = c.get("/api/library").json(); assert len(lib["styles"]) >= 10 and len(lib["palettes"]) >= 10
+    r = c.post(f"/api/projects/{pid}/apply", json={"action": "style", "style": "explorer"}).json()
+    assert r["ok"] and r["state"]["current"]["spec"]["pants"]["cargo_pocket_scale"] == 1.3
+    cmd(pid, "ثبّت البنطلون"); before = c.get(f"/api/projects/{pid}").json()["current"]
+    r = c.post(f"/api/projects/{pid}/apply", json={"action": "palette", "palette": "ocean"}).json()
+    after = r["state"]["current"]
+    assert r["ok"] and after["pants_sha"] == before["pants_sha"] and after["shirt_sha"] != before["shirt_sha"]
+    r = c.post(f"/api/projects/{pid}/apply", json={"action": "toggle", "key": "belt", "garment": "pants"}).json()
+    assert not r["ok"] and "مثبّت" in r["reply"]
+    r = c.post(f"/api/projects/{pid}/apply", json={"action": "color", "slot": "accent", "hex": "javascript:1"}).json()
+    assert not r["ok"]
+    r = c.post(f"/api/projects/{pid}/apply", json={"action": "surprise"}).json(); assert r["state"]["current"]["n"] >= 4
+
+
+def test_render_is_deterministic():
+    from app.generate import render_shirt
+    import hashlib
+    a = render_shirt(DEFAULT_SPEC["shirt"]).composite().tobytes(); b = render_shirt(DEFAULT_SPEC["shirt"]).composite().tobytes()
+    assert hashlib.sha256(a).digest() == hashlib.sha256(b).digest()
