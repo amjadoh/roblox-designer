@@ -43,7 +43,7 @@ const url=(g,n=P.current.n,ext="png")=>`/api/projects/${P.id}/rev/${n}/${g}.${ex
 async function load(id){P=await api("/api/projects/"+id);localStorage.setItem("pid",id);render()}
 function render(){const t=P.template.status;$("#tbadge").textContent="القالب: "+({passed:"متحقق",failed:"فشل التحقق",blocked:"تعذّر التنزيل",not_run:"غير متحقق"}[t]||t);
  $("#revs").innerHTML="";P.revisions.slice().reverse().forEach(r=>{const d=document.createElement("div");d.className="rev"+(r.n===P.current.n?" cur":"")+(r.n===P.approved_rev?" appr":"");
-  d.textContent=`#${r.n} ${r.n===P.approved_rev?"✔ ":""}${r.message||r.command}`;d.onclick=async()=>{if(r.n!==P.current.n){P=await api(`/api/projects/${P.id}/restore/${r.n}`,{method:"POST"});render()}};$("#revs").append(d)});
+  d.textContent=`#${r.n} ${r.n===P.approved_rev?"✔ ":""}${r.message||r.command}`;d.onclick=async()=>{if(r.n!==P.current.n){P=await api(`/api/projects/${P.id}/restore/${r.n}?base_revision=${P.current.n}`,{method:"POST"});render()}};$("#revs").append(d)});
  show()}
 function show(){const img=$("#flat");$("#three").style.display=view==="3d"?"block":"none";img.style.display=view==="3d"?"none":"block";
  if(view==="3d")update3d();else{img.src=url(view)+"?t="+Date.now();img.dataset.g=view}}
@@ -60,10 +60,9 @@ async function init3d(){try{const THREE=await import("/vendor/three.module.js");
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),ms);m.position.set(x,y,z);sc.add(m);parts[k]=m}
  const fit=()=>{const w=el.clientWidth,h=el.clientHeight;r.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix()};addEventListener("resize",fit);fit();
  (function loop(){requestAnimationFrame(loop);ctl.update();r.render(sc,cam)})();T=THREE;update3d()}catch(e){$("#three").innerHTML='<p style="padding:20px">تعذّر تحميل المعاينة ثلاثية الأبعاد (WebGL غير متاح؟ جرّب متصفحًا آخر). استخدم القالب المسطح.</p>'}}
-const REG={torso:{up:[231,8,128,64],right:[165,74,64,128],front:[231,74,128,128],left:[361,74,64,128],back:[427,74,128,128],down:[231,204,128,64]}};
-for(const [n,x0] of [["limbA",19],["limbB",308]]){REG[n]={};["right","front","left","back"].forEach((f,i)=>REG[n][f]=[x0+66*i,355,64,128]);REG[n].up=[x0+66,289,64,64];REG[n].down=[x0+66,485,64,64]}
+let REG=null; // خريطة القالب من السيرفر (مصدر واحد مطابق للقالب الرسمي)
 const loadImg=u=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u});
-async function update3d(){if(!T||!P)return;const THREE=T;const [sh,pa]=await Promise.all([loadImg(url("shirt")+"?t="+P.current.n),loadImg(url("pants")+"?t="+P.current.n)]);
+async function update3d(){if(!T||!P)return;const THREE=T;if(!REG)REG=await api("/api/template/regions");const [sh,pa]=await Promise.all([loadImg(url("shirt")+"?t="+P.current.n),loadImg(url("pants")+"?t="+P.current.n)]);
  // ترتيب مواد BoxGeometry: +x,-x,+y,-y,+z,-z ؛ الواجهة نحو +z ؛ يمين الشخصية = -x
  const map={0:"left",1:"right",2:"up",3:"down",4:"front",5:"back"};
  const tex=(srcs,part,face)=>{const [x,y,w,h]=REG[part][face];const c=document.createElement("canvas");c.width=w;c.height=h;const g=c.getContext("2d");
@@ -73,7 +72,7 @@ async function update3d(){if(!T||!P)return;const THREE=T;const [sh,pa]=await Pro
  parts.legA.visible=parts.legB.visible=showPants;if(showPants){set(parts.legA,[pa],"limbA");set(parts.legB,[pa],"limbB")}}
 // ---- تفاعل ----
 $("#form").onsubmit=async e=>{e.preventDefault();const t=$("#txt").value.trim();if(!t)return;$("#txt").value="";log(t,"u");
- try{const r=await api(`/api/projects/${P.id}/command`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:t,selection})});
+ try{const r=await api(`/api/projects/${P.id}/command`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:t,selection,base_revision:P.current.n})});
   log(r.reply,r.ok?"a":"w");P=r.state;selection=null;$("#sel").textContent="";render()}catch(x){log("خطأ: "+x.message,"w")}};
 $("#flat").onclick=async e=>{const i=e.target,r=i.getBoundingClientRect();const s=Math.min(r.width/585,r.height/559);const ox=(r.width-585*s)/2,oy=(r.height-559*s)/2;
  const x=(e.clientX-r.left-ox)/s,y=(e.clientY-r.top-oy)/s;const h=await api(`/api/projects/${P.id}/hit/${P.current.n}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({x,y,garment:i.dataset.g})});
