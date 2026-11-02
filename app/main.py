@@ -1,4 +1,4 @@
-import copy, datetime, io, json, os, sqlite3, uuid, zipfile
+import copy, datetime, io, json, os, sqlite3, threading, uuid, zipfile
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -44,11 +44,27 @@ def db():
         spec TEXT, created TEXT, PRIMARY KEY(project_id, n));
     CREATE TABLE IF NOT EXISTS approvals(project_id TEXT, rev INTEGER, shirt_sha TEXT, pants_sha TEXT, created TEXT);
     """)
+    if "kind" not in [r[1] for r in c.execute("PRAGMA table_info(approvals)")]:
+        c.execute("ALTER TABLE approvals ADD COLUMN kind TEXT DEFAULT 'design'"); c.commit()
     return c
 
 
 def rdir(pid, n): return os.path.join(DATA, "projects", pid, f"rev_{n}")
 def now(): return datetime.datetime.utcnow().isoformat() + "Z"
+
+
+# قفل كتابة واحد: يمنع أمرين متزامنين من إنشاء نفس رقم الإصدار أو الكتابة فوق بعض
+WRITE_LOCK = threading.RLock()
+
+
+def stale(pid, base):
+    """يرجع رسالة لو الأمر مبني على إصدار أقدم من الحالي، وإلا None."""
+    if base is None: return None
+    cur = db().execute("SELECT current_rev FROM projects WHERE id=?", (pid,)).fetchone()
+    if cur and cur[0] != base:
+        return (f"الأمر مبني على الإصدار {base}، بس صار فيه إصدار أحدث ({cur[0]}). "
+                "ما عدّلت شي عشان ما أكتب فوقه. شوف الإصدار الحالي وأعد الأمر.")
+    return None
 
 
 def make_rev(pid, parent, spec, command, message):
@@ -84,6 +100,7 @@ def project_state(pid):
 class Cmd(BaseModel):
     text: str
     selection: dict | None = None
+    base_revision: int | None = None  # الإصدار اللي شافه المستخدم وقت كتابة الأمر
 
 
 @app.post("/api/projects")
@@ -106,8 +123,15 @@ def list_projects():
 
 @app.post("/api/projects/{pid}/command")
 def command(pid: str, body: Cmd):
+    with WRITE_LOCK:
+        return _command(pid, body)
+
+
+def _command(pid, body):
     st = project_state(pid); cur = st["current"]
     if not body.text.strip(): raise HTTPException(400, "أمر فارغ")
+    msg_stale = stale(pid, body.base_revision)
+    if msg_stale: return {"ok": False, "conflict": True, "reply": msg_stale, "state": st}
     ops, err = commands.parse(body.text, body.selection, cur["spec"])
     if err: return {"ok": False, "reply": err, "state": st}
     if ops[0]["op"] == "undo":
@@ -124,10 +148,13 @@ def command(pid: str, body: Cmd):
 
 
 @app.post("/api/projects/{pid}/restore/{n}")
-def restore(pid: str, n: int):
-    info = rev_info(pid, n); cur = project_state(pid)["current"]
-    m = make_rev(pid, cur["n"], info["spec"], f"استرجاع {n}", f"استرجعت محتوى الإصدار {n}")
-    return project_state(pid)
+def restore(pid: str, n: int, base_revision: int | None = None):
+    with WRITE_LOCK:
+        msg_stale = stale(pid, base_revision)
+        if msg_stale: raise HTTPException(409, msg_stale)
+        info = rev_info(pid, n); cur = project_state(pid)["current"]
+        make_rev(pid, cur["n"], info["spec"], f"استرجاع {n}", f"استرجعت محتوى الإصدار {n}")
+        return project_state(pid)
 
 
 @app.get("/api/projects/{pid}/rev/{n}/{name}")
@@ -153,6 +180,14 @@ def hit(pid: str, n: int, pt: dict):
 
 @app.get("/api/template")
 def template_status(): return layout.load_report(DATA)
+
+
+@app.get("/api/template/regions")
+def template_regions():
+    """خريطة الأوجه للمعاينة ثلاثية الأبعاد: {part: {face: [x, y, w, h]}}."""
+    out = {}
+    for (p, f), box in layout.REGIONS.items(): out.setdefault(p, {})[f] = list(box)
+    return out
 
 
 @app.post("/api/template/fetch")
@@ -282,12 +317,30 @@ def package(pid: str, n: int):
 def validation(pid: str, n: int): return technical_validation(pid, n)
 
 
+def rights_blockers(info):
+    """البنود اللي تمنع الاعتماد التجاري. ما فيه فحص حقوق آلي، فكلها مفتوحة لين تنحسم يدويًا."""
+    return [
+        f"اسم الطقم «{info['spec']['name']}» ما انفحص كعلامة تجارية (WIPO والمصادر السعودية).",
+        "التشابه مع قطع موجودة في متجر روبلوكس ما انفحص (not_run).",
+        "اختبار Roblox Studio للإصدار نفسه ما انفّذ (not_run).",
+    ]
+
+
 @app.post("/api/projects/{pid}/approve/{n}")
-def approve(pid: str, n: int):
-    info = rev_info(pid, n); c = db()
-    c.execute("INSERT INTO approvals VALUES(?,?,?,?,?)", (pid, n, info["shirt_sha"], info["pants_sha"], now()))
-    c.execute("UPDATE projects SET approved_rev=? WHERE id=?", (n, pid)); c.commit()
-    return {"ok": True, "note": "اعتماد تصميم فقط؛ لا رفع ولا دفع ولا نشر.", "state": project_state(pid)}
+def approve(pid: str, n: int, kind: str = "design"):
+    with WRITE_LOCK:
+        info = rev_info(pid, n)
+        if kind not in ("design", "commercial"): raise HTTPException(400, "نوع اعتماد غير معروف")
+        if kind == "commercial":
+            b = rights_blockers(info)
+            return {"ok": False, "blocked": True, "blockers": b,
+                    "note": "ما أقدر أعتمد هالإصدار للبيع لين تنحسم هالبنود: " + " / ".join(b),
+                    "state": project_state(pid)}
+        c = db()
+        c.execute("INSERT INTO approvals(project_id, rev, shirt_sha, pants_sha, created, kind) VALUES(?,?,?,?,?,?)",
+                  (pid, n, info["shirt_sha"], info["pants_sha"], now(), kind))
+        c.execute("UPDATE projects SET approved_rev=? WHERE id=?", (n, pid)); c.commit()
+        return {"ok": True, "note": "اعتماد تصميم فقط؛ لا رفع ولا دفع ولا نشر.", "state": project_state(pid)}
 
 
 app.mount("/", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static"), html=True), name="static")

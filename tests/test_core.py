@@ -121,3 +121,48 @@ def test_basic_auth_when_password_set():
         assert c.get("/api/projects", headers={"Authorization": "Basic " + good}).status_code == 200
     finally:
         m.RD_PASSWORD = old
+
+
+def test_stale_command_is_rejected_not_overwritten():
+    p = new(); pid = p["id"]; base = p["current"]["n"]
+    r1 = c.post(f"/api/projects/{pid}/command", json={"text": "كبّر الجيب", "base_revision": base}).json(); assert r1["ok"]
+    # أمر ثاني مبني على الإصدار القديم (مثل تبويب ثاني ما تحدّث)
+    r2 = c.post(f"/api/projects/{pid}/command", json={"text": "صغّر الشعار", "base_revision": base}).json()
+    assert not r2["ok"] and r2.get("conflict") and "أحدث" in r2["reply"]
+    assert r2["state"]["current"]["n"] == r1["state"]["current"]["n"]  # ما انكتب فوقه
+    assert c.post(f"/api/projects/{pid}/restore/{base}?base_revision={base}").status_code == 409
+
+
+def test_commercial_approval_blocked_until_rights_resolved():
+    p = new(); pid = p["id"]; n = p["current"]["n"]
+    r = c.post(f"/api/projects/{pid}/approve/{n}?kind=commercial").json()
+    assert not r["ok"] and r["blocked"] and len(r["blockers"]) >= 1
+    assert r["state"]["approved_rev"] is None  # ما انحفظ أي اعتماد
+
+
+def test_undo_and_reopen_restores_same_files():
+    from app import main as m
+    p = new(); pid = p["id"]; first = p["current"]
+    cmd(pid, "خفف الأحمر"); r = cmd(pid, "تراجع"); assert r["ok"]
+    # "إعادة فتح": قراءة جديدة من القاعدة والملفات بدون أي حالة في الذاكرة
+    again = m.project_state(pid)["current"]
+    assert again["spec"] == first["spec"]
+    assert again["shirt_sha"] == first["shirt_sha"] and again["pants_sha"] == first["pants_sha"]
+
+
+def test_psd_edit_saved_and_reopened():
+    from psd_tools import PSDImage
+    p = new(); d = rdir(p["id"], p["current"]["n"])
+    psd = PSDImage.open(os.path.join(d, "shirt.psd"))
+    for l in psd:
+        if l.name == "pocket": l.visible = False
+    out = os.path.join(d, "edited.psd"); psd.save(out)
+    re = PSDImage.open(out)
+    assert {l.name: l.visible for l in re}["pocket"] is False
+    a = os.path.join(d, "a.png"); re.composite(force=True).save(a)
+    assert sha256(a) != sha256(os.path.join(d, "shirt.png"))
+
+
+def test_template_regions_endpoint_matches_layout():
+    r = c.get("/api/template/regions").json()
+    assert r["limbA"]["up"] == [217, 289, 64, 64] and r["limbB"]["front"] == [308, 355, 64, 128]
