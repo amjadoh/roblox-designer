@@ -1,7 +1,7 @@
 """توليد إجرائي لطبقات القميص والبنطلون، وتصدير PNG وPSD بطبقات حقيقية.
 لا يستخدم أي أصول خارجية ولا نصوصًا ولا خطوطًا: كل شيء أشكال هندسية مرسومة بالكود."""
 import colorsys, hashlib, os
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 from psd_tools import PSDImage
 from psd_tools.api.layers import PixelLayer
 from .layout import SIZE, REGIONS
@@ -77,6 +77,16 @@ class Layers:
             self.elements.append({"element": element, "part": part, "face": face,
                                   "box": [x + bx[0], y + bx[1], bx[2], bx[3]]})
 
+    def paste_tile(self, name, part, face, tile):
+        """يلصق صورة جاهزة بحجم المنطقة (للتأثيرات اللي تحتاج تنعيم)."""
+        x, y, w, h = REGIONS[(part, face)]
+        self.get(name).alpha_composite(tile, (x, y))
+
+    def fabric_on_top(self):
+        """الظل والطيات فوق التفاصيل (الجيب والخطوط تنطوي مع القماش)."""
+        top = [n for n in ("shade", "folds") if n in self.order]
+        self.order = [n for n in self.order if n not in top] + top
+
     def composite(self):
         out = Image.new("RGBA", SIZE, (0, 0, 0, 0))
         for n in self.order:
@@ -102,6 +112,91 @@ def _pattern(d, w, h, kind, col, op):
             d.line([(0, y), (w / 2, y + 8), (w, y)], fill=rgba(col, a), width=2)
 
 
+# ---------- مظهر القماش (ظلال، طيات، خياطة، ملمس) ----------
+# كله ثابت لكل منطقة (بدون عشوائية)، فنفس المواصفات تعطي نفس البايتات دائمًا.
+
+def _edge_shadow(w, h, side):
+    """ظل ناعم عند الحواف الرأسية (box shading). الجوانب أغمق من الأمام والخلف."""
+    t = Image.new("RGBA", (w, h), (0, 0, 0, 0)); d = ImageDraw.Draw(t)
+    ew, peak = (14, 95) if side else (12, 70)
+    for i in range(ew):
+        a = int(peak * (1 - i / ew) ** 2)
+        d.line([(i, 0), (i, h)], fill=(0, 0, 0, a)); d.line([(w - 1 - i, 0), (w - 1 - i, h)], fill=(0, 0, 0, a))
+    for i in range(10):  # ظل خفيف تحت (الجاذبية)
+        d.line([(0, h - 1 - i), (w, h - 1 - i)], fill=(0, 0, 0, int(45 * (1 - i / 10))))
+    return t
+
+
+def _folds(w, h, lines):
+    """طيات: خط ظل منعّم مع لمعة فوقه بشوي (حسب دروس DevForum: اللمعة فوق الطية مو عليها)."""
+    sh = Image.new("RGBA", (w, h), (0, 0, 0, 0)); hi = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ds, dh = ImageDraw.Draw(sh), ImageDraw.Draw(hi)
+    for pts in lines:
+        ds.line(pts, fill=(0, 0, 0, 95), width=2)
+        dh.line([(x, y - 3) for x, y in pts], fill=(255, 255, 255, 45), width=2)
+    sh = sh.filter(ImageFilter.GaussianBlur(1.4)); hi = hi.filter(ImageFilter.GaussianBlur(1.8))
+    sh.alpha_composite(hi)
+    return sh
+
+
+def _sleeve_folds(w, h):
+    return _folds(w, h, [[(8, 60), (w * .4, 65), (w - 14, 61)], [(w * .35, 73), (w - 8, 70)],
+                         [(10, h - 33), (w * .6, h - 30)]])
+
+
+def _torso_folds(w, h):
+    return _folds(w, h, [[(4, 30), (22, 44)], [(w - 4, 30), (w - 22, 44)],          # تحت الإبط
+                         [(10, h - 30), (w * .3, h - 26)], [(w - 10, h - 30), (w * .7, h - 26)]])
+
+
+def _leg_folds(w, h):
+    return _folds(w, h, [[(8, 82), (w * .45, 87), (w - 12, 83)], [(w * .3, 95), (w - 8, 92)],
+                         [(10, h - 30), (w * .55, h - 27)]])
+
+
+def _pants_torso_folds(w, h):
+    return _folds(w, h, [[(w * .5 - 4, h - 4), (w * .5 - 16, h - 30)], [(w * .5 + 4, h - 4), (w * .5 + 16, h - 30)]])
+
+
+def _stitches(w, h, col, side):
+    """خياطة متقطعة داخل الحواف الرأسية."""
+    t = Image.new("RGBA", (w, h), (0, 0, 0, 0)); d = ImageDraw.Draw(t)
+    for x in ((3, w - 4) if not side else (w // 2,)):
+        for y in range(4, h - 4, 7):
+            d.line([(x, y), (x, y + 3)], fill=rgba(col, 150), width=1)
+    return t
+
+
+def _texture(w, h, seed):
+    """ملمس قماش خفيف: نقاط فاتحة وغامقة ثابتة."""
+    import numpy as np
+    rng = np.random.default_rng(seed)
+    v = rng.integers(0, 2, (h, w), dtype=np.uint8) * 255
+    a = (rng.random((h, w)) * 14).astype(np.uint8)
+    arr = np.dstack([v, v, v, a])
+    return Image.fromarray(arr, "RGBA")
+
+
+def _seed(*keys):
+    return int(hashlib.sha256("/".join(keys).encode()).hexdigest()[:8], 16)
+
+
+def add_fabric(L, garment, faces, base):
+    stitch = darken(base, .45) if sum(base) > 200 else lighten(base, .28)
+    for p, f in faces:
+        x, y, w, h = REGIONS[(p, f)]
+        L.paste_tile("texture", p, f, _texture(w, h, _seed(garment, p, f)))
+        if f in ("up", "down"): continue
+        L.paste_tile("shade", p, f, _edge_shadow(w, h, side=f in ("left", "right")))
+        if p == "torso":
+            if garment == "shirt": L.paste_tile("folds", p, f, _torso_folds(w, h))
+            elif f in ("front", "back"): L.paste_tile("folds", p, f, _pants_torso_folds(w, h))
+            if f in ("front", "back"): L.paste_tile("stitching", p, f, _stitches(w, h, stitch, side=False))
+        else:
+            L.paste_tile("folds", p, f, _sleeve_folds(w, h) if garment == "shirt" else _leg_folds(w, h))
+            if f in ("left", "right"): L.paste_tile("stitching", p, f, _stitches(w, h, stitch, side=True))
+
+
 def render_shirt(s):
     L = Layers(); c = s["colors"]
     base, acc = hex2rgb(c["base"]), hex2rgb(c["accent"]); trim = lighten(base, 0.10)
@@ -114,12 +209,10 @@ def render_shirt(s):
         if f in ("up", "down"): continue
         L.local("pattern", p, f, lambda d, w, h: _pattern(d, w, h, s["pattern"], acc, s["pattern_opacity"]),
                 element="pattern" if (p, f) == ("torso", "front") and s["pattern"] != "none" else None)
+    add_fabric(L, "shirt", faces, base)
     for p, f in faces:
-        def shade(d, w, h, f=f):
-            d.rectangle([0, 0, w - 1, h - 1], outline=(0, 0, 0, 70), width=2)
-            if f == "down": d.rectangle([0, 0, w, h], fill=(0, 0, 0, 70))
-            if f == "up": d.rectangle([0, 0, w, h], fill=(255, 255, 255, 18))
-        L.local("shade", p, f, shade)
+        if f == "down": L.local("shade", p, f, lambda d, w, h: d.rectangle([0, 0, w, h], fill=(0, 0, 0, 70)))
+        if f == "up": L.local("shade", p, f, lambda d, w, h: d.rectangle([0, 0, w, h], fill=(255, 255, 255, 18)))
     if s["sleeve_stripe"]:
         for p in ("limbA", "limbB"):
             for f in ("right", "left", "front", "back"):
@@ -167,6 +260,7 @@ def render_shirt(s):
                 d.polygon(_scale_pts(pts, cx, cy, k), fill=rgba(acc))
         L.local("emblem", "torso", "front", em, element="emblem",
                 box=(int(cx - 14 * k), int(cy - 12 * k), int(28 * k), int(24 * k)))
+    L.fabric_on_top()
     return L
 
 
@@ -180,11 +274,9 @@ def render_pants(s):
     for p, f in faces:
         if f in ("up", "down"): continue
         L.local("pattern", p, f, lambda d, w, h: _pattern(d, w, h, s["pattern"], acc, s["pattern_opacity"]))
+    add_fabric(L, "pants", faces, base)
     for p, f in faces:
-        def shade(d, w, h, f=f):
-            d.rectangle([0, 0, w - 1, h - 1], outline=(0, 0, 0, 70), width=2)
-            if f == "down": d.rectangle([0, 0, w, h], fill=(0, 0, 0, 70))
-        L.local("shade", p, f, shade)
+        if f == "down": L.local("shade", p, f, lambda d, w, h: d.rectangle([0, 0, w, h], fill=(0, 0, 0, 70)))
     if s["belt"]:
         for f in ("front", "back", "left", "right"):
             def belt(d, w, h):
@@ -212,6 +304,7 @@ def render_pants(s):
                 def cuff(d, w, h):
                     d.rectangle([0, h - 18, w, h], fill=rgba(trim)); d.rectangle([0, h - 20, w, h - 19], fill=rgba(acc))
                 L.local("cuffs", p, f, cuff, element="cuff" if (p, f) == ("limbA", "front") else None, box=(0, 108, 64, 20))
+    L.fabric_on_top()
     return L
 
 

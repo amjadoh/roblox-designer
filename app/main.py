@@ -6,7 +6,8 @@ from PIL import Image
 from pydantic import BaseModel
 from psd_tools import PSDImage
 
-from . import accessory, commands, layout
+from . import accessory, commands, layout, library
+from .spec import SpecError, merge, validate_patch
 from .generate import DEFAULT_SPEC, render_revision, sha256
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -148,6 +149,88 @@ def _command(pid, body):
         return {"ok": False, "reply": "لم يتغير شيء (قد يكون الجزء مثبّتًا أو بلغ الحد).", "state": st}
     n = make_rev(pid, cur["n"], spec, body.text, msg)
     return {"ok": True, "reply": f"{msg}. الإصدار {n} جاهز للمراجعة.", "state": project_state(pid)}
+
+
+@app.get("/api/library")
+def get_library(): return library.public()
+
+
+class Action(BaseModel):
+    action: str                      # style | palette | pattern | toggle | color | scale | surprise
+    style: str | None = None
+    palette: str | None = None
+    value: str | bool | None = None
+    garment: str | None = None
+    key: str | None = None           # اسم العنصر للـ toggle و scale
+    slot: str | None = None          # base | accent
+    hex: str | None = None
+    factor: float | None = None
+    base_revision: int | None = None
+
+
+TOGGLES = {"shirt": ("pocket", "emblem", "sleeve_stripe", "collar", "hem", "cuff", "drawstrings"),
+           "pants": ("cargo_pocket", "belt", "cuff", "knee_seams")}
+SCALES = {"pocket": "shirt", "emblem": "shirt", "cargo_pocket": "pants"}
+NAMES = {"pocket": "جيب الصدر", "emblem": "الشعار", "sleeve_stripe": "خط الأكمام", "collar": "الياقة", "hem": "الحاشية",
+         "cuff": "الأساور", "drawstrings": "حبال الهودي", "cargo_pocket": "جيوب الكارجو", "belt": "الحزام", "knee_seams": "خياطة الركبة"}
+GARMENT = {"shirt": "الهودي", "pants": "البنطلون"}
+
+
+def action_patch(a: Action, spec):
+    """يحوّل ضغطة زر لـ patch مسموح ورسالة. يرجع (patch, رسالة) أو يرفع SpecError."""
+    import random
+    if a.action == "surprise":
+        st = random.choice(library.STYLES); pal = random.choice(library.PALETTES)
+        return library.style_patch(st["id"], pal["id"]), f"مفاجأة! {st['emoji']} {st['name']} بألوان {pal['emoji']} {pal['name']}"
+    if a.action == "style":
+        p = library.style_patch(a.style, a.palette)
+        if not p: raise SpecError("ستايل غير معروف")
+        st = next(x for x in library.STYLES if x["id"] == a.style)
+        return p, f"لبّستك ستايل {st['emoji']} {st['name']}"
+    if a.action == "palette":
+        p = library.palette_patch(a.palette)
+        if not p: raise SpecError("ألوان غير معروفة")
+        pal = library.palette(a.palette)
+        return p, f"غيّرت الألوان لـ {pal['emoji']} {pal['name']}"
+    gs = [a.garment] if a.garment in ("shirt", "pants") else ["shirt", "pants"]
+    if a.action == "pattern":
+        return {g: {"pattern": a.value} for g in gs}, "غيّرت النقش"
+    if a.action == "toggle":
+        g = a.garment if a.garment in TOGGLES else SCALES.get(a.key, "shirt")
+        if a.key not in TOGGLES[g]: raise SpecError("عنصر غير معروف")
+        v = (not spec[g][a.key]) if a.value is None else bool(a.value)
+        return {g: {a.key: v}}, ("أضفت " if v else "شلت ") + NAMES[a.key]
+    if a.action == "color":
+        if a.slot not in ("base", "accent"): raise SpecError("لون غير معروف")
+        what = "اللون الأساسي" if a.slot == "base" else "لون التفاصيل"
+        return {g: {"colors": {a.slot: a.hex}} for g in gs}, f"غيّرت {what}" + (f" في {GARMENT[gs[0]]}" if len(gs) == 1 else "")
+    if a.action == "scale":
+        g = SCALES.get(a.key)
+        if not g or not a.factor: raise SpecError("ما يتكبّر هذا العنصر")
+        k = a.key + "_scale"; v = round(max(.4, min(1.8, spec[g][k] * a.factor)), 3)
+        return {g: {k: v}}, f"{'كبّرت' if a.factor > 1 else 'صغّرت'} {NAMES[a.key]}"
+    raise SpecError("أمر غير معروف")
+
+
+@app.post("/api/projects/{pid}/apply")
+def apply_action(pid: str, a: Action):
+    with WRITE_LOCK:
+        st = project_state(pid); cur = st["current"]
+        msg_stale = stale(pid, a.base_revision)
+        if msg_stale: return {"ok": False, "conflict": True, "reply": msg_stale, "state": st}
+        try:
+            patch, msg = action_patch(a, cur["spec"])
+            validate_patch(patch)
+        except SpecError as e:
+            return {"ok": False, "reply": f"ما قدرت: {e}", "state": st}
+        spec = merge(cur["spec"], patch)
+        locked = [g for g in cur["spec"]["locked"] if g in patch]
+        for g in cur["spec"]["locked"]: spec[g] = cur["spec"][g]
+        if spec == cur["spec"]:
+            why = f" ({'، '.join(GARMENT[g] for g in locked)} مثبّت)" if locked else ""
+            return {"ok": False, "reply": "ما تغيّر شي" + why + ".", "state": st}
+        n = make_rev(pid, cur["n"], spec, a.action, msg)
+        return {"ok": True, "reply": msg + " ✨", "state": project_state(pid)}
 
 
 class FreeRequest(BaseModel):
