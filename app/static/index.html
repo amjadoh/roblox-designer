@@ -27,7 +27,7 @@ button:hover{background:#383846}button.primary{background:#D71920;border-color:#
 <header><h1>مصمم أصول Roblox <span class="badge" id="tbadge">القالب: غير متحقق</span></h1>
 <button id="bnew">مشروع جديد</button><button id="btpl">تحقق من القالب الرسمي</button></header>
 <section id="chat"><div id="log"></div><div id="sel"></div>
-<form id="form"><input id="txt" placeholder="مثال: خفف الأحمر، كبّر الجيب، ثبّت البنطلون" autocomplete="off"><button class="primary">نفّذ</button></form></section>
+<form id="form"><input id="txt" placeholder="مثال: خفف الأحمر، كبّر الجيب، ثبّت البنطلون" autocomplete="off"><button class="primary">نفّذ</button><button type="button" id="bask" title="أي طلب حر يروح لكلود ويرد عليك هنا">اسأل كلود 💬</button></form></section>
 <section id="mid"><div id="bar">
 <button data-v="3d">مجسم</button><button data-v="shirt">قالب القميص</button><button data-v="pants">قالب البنطلون</button>
 <button id="bshow">إخفاء/إظهار البنطلون</button><button id="bcmp">قارن بالسابق</button>
@@ -83,6 +83,15 @@ $("#bundo").onclick=async()=>{$("#txt").value="تراجع";$("#form").requestSub
 $("#bcmp").onclick=()=>{if(!P.current.parent)return log("لا يوجد إصدار سابق للمقارنة","w");view="shirt";const i=$("#flat");$("#three").style.display="none";i.style.display="block";
  let f=false;const t=setInterval(()=>{f=!f;i.src=url("shirt",f?P.current.n:P.current.parent)+"?c="+Math.random()},900);setTimeout(()=>{clearInterval(t);show()},6000);log("مقارنة: يتبدّل القميص بين الحالي (#"+P.current.n+") والسابق (#"+P.current.parent+") لمدة 6 ثوانٍ","a")};
 $("#bok").onclick=async()=>{const r=await api(`/api/projects/${P.id}/approve/${P.current.n}`,{method:"POST"});P=r.state;log("اعتمدتُ الإصدار "+P.current.n+". "+r.note,"a");render()};
+// ---- طلبات حرة لكلود (طابور على السيرفر؛ كلود يرد من Claude Code) ----
+const seenReplies=new Set(JSON.parse(localStorage.getItem("seenReplies")||"[]"));
+$("#bask").onclick=async()=>{const t=$("#txt").value.trim();if(!t)return log("اكتب طلبك أول، بعدين اضغط «اسأل كلود».","w");$("#txt").value="";log(t,"u");
+ try{const r=await api(`/api/projects/${P.id}/requests`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:t,base_revision:P.current.n})});log(r.reply,"a")}
+ catch(x){log("ما وصل الطلب: "+x.message,"w")}};
+async function pollReplies(){if(!P)return;try{const rs=await api(`/api/projects/${P.id}/requests`);let changed=false;
+ for(const r of rs.slice().reverse()){if(r.status!=="pending"&&r.reply&&!seenReplies.has(r.id)){seenReplies.add(r.id);changed=true;log("كلود: "+r.reply,r.status==="done"?"a":"w")}}
+ if(changed){localStorage.setItem("seenReplies",JSON.stringify([...seenReplies].slice(-200)));P=await api("/api/projects/"+P.id);render()}}catch{}}
+setInterval(pollReplies,8000);
 $("#bdl").onclick=()=>{location.href=`/api/projects/${P.id}/package/${P.current.n}`};
 $("#bnew").onclick=async()=>{P=await api("/api/projects",{method:"POST"});log("أنشأت طقمًا جديدًا. اكتب ما تريد تعديله.","a");render()};
 $("#btpl").onclick=async()=>{log("أنزّل القالب الرسمي من Roblox وأتحقق من الخريطة…","a");const r=await api("/api/template/fetch",{method:"POST"});
