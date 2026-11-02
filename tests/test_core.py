@@ -84,3 +84,16 @@ def test_accessory_in_package_with_honest_status():
     assert "accessory/glasses.glb" in z.namelist()
     a = {x["id"]: x["status"] for x in json.loads(z.read("reports/accessory-validation.json"))}
     assert a["acc_tris"] == a["acc_watertight"] == "passed" and a["acc_attachment"] == "not_run"
+
+
+def test_design_cli_patch_validation():
+    import pytest
+    from app.design_cli import validate_patch, merge, SpecError
+    ok = {"shirt": {"colors": {"base": "#C2A878"}, "pattern": "chevron", "pocket_scale": 1.2}, "locked": ["pants"]}
+    validate_patch(ok)
+    m = merge(DEFAULT_SPEC, ok)
+    assert m["shirt"]["colors"] == {"base": "#C2A878", "accent": DEFAULT_SPEC["shirt"]["colors"]["accent"]}
+    for bad in ({"shirt": {"wings": True}}, {"shirt": {"pocket_scale": 5}}, {"shirt": {"colors": {"base": "red"}}},
+                {"pants": {"pattern": "logo"}}, {"locked": ["hat"]}, {"shirt": {"pocket": "yes"}}):
+        with pytest.raises(SpecError):
+            validate_patch(bad)
