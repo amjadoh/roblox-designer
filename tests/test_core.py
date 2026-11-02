@@ -58,13 +58,23 @@ def test_psd_layers_edit_and_reexport():
     assert sha256(out) != sha256(os.path.join(d, "shirt.png"))
 
 def test_template_validator_self_consistent():
-    img = Image.new("RGBA", layout.SIZE, (0, 0, 0, 0))
-    for (_, _), (x, y, w, h) in layout.REGIONS.items(): img.paste((200, 200, 200, 255), (x, y, x + w, y + h))
+    # يحاكي القالب الرسمي: خلفية رمادية معتمة والأوجه مربعات ملوّنة
+    img = Image.new("RGB", layout.SIZE, (227, 227, 227))
+    for (_, _), (x, y, w, h) in layout.REGIONS.items(): img.paste((220, 40, 40), (x, y, x + w, y + h))
     assert layout.validate_template(img)["status"] == "passed"
-    bad = Image.new("RGBA", layout.SIZE, (255, 255, 255, 255)); assert layout.validate_template(bad)["status"] == "failed"
-    shifted = Image.new("RGBA", layout.SIZE, (0, 0, 0, 0))
-    for (_, _), (x, y, w, h) in layout.REGIONS.items(): shifted.paste((1, 1, 1, 255), (x + 20, y + 20, x + w + 20, y + h + 20))
+    bad = Image.new("RGB", layout.SIZE, (227, 227, 227)); assert layout.validate_template(bad)["status"] == "failed"
+    shifted = Image.new("RGB", layout.SIZE, (227, 227, 227))
+    for (_, _), (x, y, w, h) in layout.REGIONS.items(): shifted.paste((220, 40, 40), (x + 20, y + 20, x + w + 20, y + h + 20))
     assert layout.validate_template(shifted)["status"] == "failed"
+
+
+def test_limb_layout_matches_official_r15():
+    # من القالب الرسمي: اليمين L B R F و U/D فوق F عند x=217؛ اليسار F L B R و U/D عند x=308
+    R = layout.REGIONS
+    assert [R[("limbA", f)][0] for f in ("left", "back", "right", "front")] == [19, 85, 151, 217]
+    assert [R[("limbB", f)][0] for f in ("front", "left", "back", "right")] == [308, 374, 440, 506]
+    assert R[("limbA", "up")][:2] == (217, 289) and R[("limbA", "down")][:2] == (217, 485)
+    assert R[("limbB", "up")][:2] == (308, 289) and R[("limbB", "down")][:2] == (308, 485)
 
 def test_package_contents_and_no_overclaim():
     p = new(); n = p["current"]["n"]
