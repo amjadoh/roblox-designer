@@ -39,6 +39,7 @@ button.primary{background:var(--red);border-color:var(--red)}button.ok{backgroun
 #log{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:0}
 .m{padding:8px 10px;border-radius:10px;max-width:92%;line-height:1.6;font-size:14px;white-space:pre-wrap}
 .u{background:var(--card2);align-self:flex-start}.a{background:#1d2a22;align-self:flex-end}.w{background:#3a2a1a;align-self:flex-end}
+.m.c{color:#6cb6ff}
 #form{display:flex;gap:6px;padding:10px;border-top:1px solid var(--line);flex-wrap:wrap}
 #form input{flex:1 1 160px;padding:10px;border-radius:8px;border:1px solid #3a3a46;background:#0e0e12;color:var(--text);font-family:inherit;font-size:15px}
 .hint{font-size:12px;color:var(--muted);padding:0 12px 8px}
@@ -180,7 +181,7 @@ const seenReplies=new Set(JSON.parse(localStorage.getItem("seenReplies")||"[]"))
 $("#bask").onclick=async()=>{const t=$("#txt").value.trim();if(!t)return log("اكتب فكرتك أول، بعدين اضغط «اسأل كلود».","w");$("#txt").value="";log(t,"u");
  try{const r=await post(`/api/projects/${P.id}/requests`,{text:t,base_revision:P.current.n});log(r.reply,"a")}catch(x){log("ما وصل الطلب: "+x.message,"w")}};
 async function pollReplies(){if(!P)return;try{const rs=await api(`/api/projects/${P.id}/requests`);let changed=false;
- for(const r of rs.slice().reverse()){if(r.status!=="pending"&&r.reply&&!seenReplies.has(r.id)){seenReplies.add(r.id);changed=true;log("كلود: "+r.reply,r.status==="done"?"a":"w");toast("كلود رد عليك 💬")}}
+ for(const r of rs.slice().reverse()){if(r.status!=="pending"&&r.reply&&!seenReplies.has(r.id)){seenReplies.add(r.id);changed=true;log("كلود: "+r.reply,(r.status==="done"?"a":"w")+" c");toast("كلود رد عليك 💬")}}
  if(changed){localStorage.setItem("seenReplies",JSON.stringify([...seenReplies].slice(-200)));P=await api("/api/projects/"+P.id);render()}}catch{}}
 setInterval(pollReplies,8000);
 
