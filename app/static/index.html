@@ -8,7 +8,7 @@
 :root{--bg:#16161b;--panel:#1d1d24;--line:#2c2c37;--text:#eeeef2;--muted:#a3a3b0;--red:#D71920;--green:#1e7a3c;--card:#25252f;--card2:#30303c}
 *{box-sizing:border-box}
 body{margin:0;font-family:Tahoma,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;display:grid;
- grid-template-columns:380px 1fr 200px;grid-template-rows:auto 1fr;overflow:hidden}
+ grid-template-columns:460px 1fr 200px;grid-template-rows:auto 1fr;overflow:hidden}
 header{grid-column:1/-1;padding:8px 14px;background:#0e0e12;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line)}
 header h1{font-size:16px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 button{background:var(--card2);color:var(--text);border:1px solid #3c3c4a;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-size:14px}
@@ -37,7 +37,7 @@ button.primary{background:var(--red);border-color:var(--red)}button.ok{backgroun
 /* المحادثة */
 #chatpane{min-height:0}
 #log{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:0}
-.m{padding:8px 10px;border-radius:10px;max-width:92%;line-height:1.6;font-size:14px;white-space:pre-wrap}
+.m{padding:8px 10px;border-radius:10px;max-width:94%;line-height:1.7;font-size:16px;white-space:pre-wrap}
 .u{background:var(--card2);align-self:flex-start}.a{background:#1d2a22;align-self:flex-end}.w{background:#3a2a1a;align-self:flex-end}
 .m.c{color:#6cb6ff}
 #form{display:flex;gap:6px;padding:10px;border-top:1px solid var(--line);flex-wrap:wrap}
@@ -66,7 +66,7 @@ button.primary{background:var(--red);border-color:var(--red)}button.ok{backgroun
  #bar{gap:4px;padding:6px}#bar button{white-space:nowrap;padding:6px 8px;font-size:13px;flex:1 1 auto}#bar .sep{display:none}
  #seltool{position:static;margin:8px;max-width:none}
  body{grid-template-rows:auto auto 1fr}#view{height:46vh;flex:none}
- .pane.on{overflow:visible}#log{max-height:50vh}
+ .pane.on{overflow:visible}#log{max-height:none;min-height:65vh}
  header h1{font-size:14px}#btpl{display:none}
 }
 </style></head>
