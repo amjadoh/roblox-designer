@@ -15,6 +15,7 @@ DEFAULT_SPEC = {
         "emblem": True, "emblem_scale": 1.0,
         "sleeve_stripe": True, "collar": True, "hem": True, "cuff": True,
         "drawstrings": True,
+        "sticker": "none", "sticker_scale": 1.0, "sticker_place": "front",
     },
     "pants": {
         "colors": {"base": "#111116", "accent": "#D71920"},
@@ -110,6 +111,85 @@ def _pattern(d, w, h, kind, col, op):
     elif kind == "chevron":
         for y in range(0, h, step):
             d.line([(0, y), (w / 2, y + 8), (w, y)], fill=rgba(col, a), width=2)
+    elif kind == "stripes":
+        for x in range(step // 2, w, step):
+            d.rectangle([x - 2, 0, x + 1, h], fill=rgba(col, a))
+
+
+# ---------- الرسومات (ملصقات هندسية أصلية) ----------
+# كل رسمة مضلعات بإحداثيات من -1 إلى 1، يرسمها الكود. ما فيه صور خارجية ولا شخصيات ولا كتابة.
+STICKERS = ("none", "star", "bolt", "flame", "wings", "crown", "moon", "heart", "claws", "shield", "gem", "planet", "wolf")
+STICKER_PLACES = ("front", "back", "both")
+_SS = 4  # تنعيم: نرسم بأربع أضعاف الدقة ونصغّر
+
+
+def _star(n=5, r1=1.0, r2=0.42, rot=-90):
+    import math
+    return [((r1 if i % 2 == 0 else r2) * math.cos(math.radians(rot + i * 180 / n)),
+             (r1 if i % 2 == 0 else r2) * math.sin(math.radians(rot + i * 180 / n))) for i in range(2 * n)]
+
+
+def _sticker_shapes(kind):
+    """يرجع قائمة (نوع, نقاط/صندوق, لون) — اللون: 'm' الرئيسي، 'l' أفتح، 'x' يمسح (فتحة)."""
+    if kind == "star": return [("poly", _star(), "m"), ("poly", _star(r1=.5, r2=.2), "l")]
+    if kind == "bolt": return [("poly", [(-.2, -1), (.5, -1), (.12, -.2), (.55, -.2), (-.35, 1), (-.05, .12), (-.48, .12)], "m")]
+    if kind == "flame":
+        out = [(0, -1), (.25, -.55), (.5, -.75), (.62, -.2), (.7, .3), (.5, .75), (0, 1), (-.5, .75), (-.7, .3), (-.6, -.25), (-.4, -.6), (-.25, -.3)]
+        inner = [(0, -.2), (.25, .2), (.3, .55), (0, .8), (-.3, .55), (-.25, .2)]
+        return [("poly", out, "m"), ("poly", inner, "l")]
+    if kind == "wings":
+        wing = [(.08, -.3), (.5, -.75), (1.0, -.85), (.9, -.45), (1.0, -.4), (.85, -.05), (.92, 0), (.7, .3), (.75, .35), (.45, .55), (.08, .2)]
+        band = [(.12, -.2), (.5, -.6), (.85, -.68), (.5, -.35), (.15, -.02)]
+        return [(t, [(sx * x * 1.45, y) for x, y in g], c) for sx in (-1, 1) for t, g, c in (("poly", wing, "m"), ("poly", band, "l"))]
+    if kind == "crown":
+        return [("poly", [(-.9, .6), (-.95, -.6), (-.45, -.05), (0, -.8), (.45, -.05), (.95, -.6), (.9, .6)], "m"),
+                ("rect", (-.9, .45, .9, .75), "l"),
+                ("ell", (-1.07, -.78, -.83, -.54), "l"), ("ell", (-.12, -.98, .12, -.74), "l"), ("ell", (.83, -.78, 1.07, -.54), "l")]
+    if kind == "moon": return [("ell", (-.9, -.9, .9, .9), "m"), ("ell", (-.45, -1.05, 1.15, .65), "x")]
+    if kind == "heart":
+        return [("ell", (-.95, -.8, .05, .2), "m"), ("ell", (-.05, -.8, .95, .2), "m"), ("poly", [(-.93, -.2), (.93, -.2), (0, .95)], "m"),
+                ("ell", (-.65, -.55, -.3, -.2), "l")]
+    if kind == "claws":
+        return [("poly", [(x - .12, -.95), (x + .02, -.95), (x + .3, .95), (x + .14, .95)], "m") for x in (-.7, -.15, .4)]
+    if kind == "shield":
+        return [("poly", [(-.85, -.95), (.85, -.95), (.85, .1), (0, 1), (-.85, .1)], "m"),
+                ("poly", [(-.55, -.65), (.55, -.65), (.55, .05), (0, .62), (-.55, .05)], "x"),
+                ("poly", [(-.1, -.65), (.1, -.65), (.1, .5), (0, .62), (-.1, .5)], "m")]
+    if kind == "gem":
+        return [("poly", [(-.6, -.75), (.6, -.75), (1, -.25), (0, 1), (-1, -.25)], "m"),
+                ("poly", [(-.6, -.75), (.6, -.75), (.35, -.25), (-.35, -.25)], "l"),
+                ("poly", [(-.35, -.25), (.35, -.25), (0, .75)], "l")]
+    if kind == "planet":
+        return [("ring", (-1.05, -.35, 1.05, .35), "l"), ("ell", (-.6, -.6, .6, .6), "m"), ("arc", (-1.05, -.35, 1.05, .35), "l")]
+    if kind == "wolf":
+        head = [(-.75, -1), (-.3, -.5), (.3, -.5), (.75, -1), (.8, -.05), (.5, .4), (.18, 1), (-.18, 1), (-.5, .4), (-.8, -.05)]
+        return [("poly", head, "m"), ("poly", [(-.55, -.85), (-.35, -.52), (-.55, -.45)], "l"), ("poly", [(.55, -.85), (.35, -.52), (.55, -.45)], "l"),
+                ("poly", [(-.5, -.1), (-.15, -.05), (-.3, .1)], "x"), ("poly", [(.5, -.1), (.15, -.05), (.3, .1)], "x"),
+                ("poly", [(-.15, .75), (.15, .75), (0, .95)], "x")]
+    return []
+
+
+def _sticker_tile(kind, w, h, cx, cy, R, col):
+    """يرسم الرسمة في صورة بحجم المنطقة، مع ظل خفيف عشان تبان على أي لون."""
+    W, H = w * _SS, h * _SS
+    t = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(t)
+    lite = lighten(col, .4) if sum(col) < 560 else darken(col, .3)
+    tf = lambda x, y, dx=0, dy=0: ((cx + x * R + dx) * _SS, (cy + y * R + dy) * _SS)
+    for typ, g, c in _sticker_shapes(kind):
+        fill = (0, 0, 0, 0) if c == "x" else rgba(col if c == "m" else lite)
+        if typ == "poly": d.polygon([tf(x, y) for x, y in g], fill=fill)
+        else:
+            a, b = tf(g[0], g[1]), tf(g[2], g[3]); wd = int(R * .14 * _SS)
+            if typ == "ell": d.ellipse([a, b], fill=fill)
+            elif typ == "rect": d.rectangle([a, b], fill=fill)
+            elif typ == "ring": d.ellipse([a, b], outline=fill, width=wd)
+            elif typ == "arc": d.arc([a, b], 0, 180, fill=fill, width=wd)
+    # ظل من شكل الرسمة النهائي (بعد الفتحات)، مزاح شوي لتحت
+    sh = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    sh.putalpha(t.getchannel("A").point(lambda v: v * 90 // 255))
+    out = Image.new("RGBA", (W, H), (0, 0, 0, 0)); out.alpha_composite(sh, (int(1.5 * _SS), 2 * _SS)); out.alpha_composite(t)
+    sh = out
+    return sh.resize((w, h), Image.LANCZOS)
 
 
 # ---------- مظهر القماش (ظلال، طيات، خياطة، ملمس) ----------
@@ -253,7 +333,15 @@ def render_shirt(s):
                 d.line([(x, 20), (x - 2 if x < 64 else x + 2, 44)], fill=(215, 215, 220, 255), width=2)
                 d.ellipse([x - 7 if x < 64 else x + 1, 43, x - 1 if x < 64 else x + 7, 49], fill=rgba(acc))
         L.local("drawstrings", "torso", "front", ds)
-    if s["emblem"]:
+    stk = s.get("sticker", "none"); place = s.get("sticker_place", "front")
+    if stk in STICKERS and stk != "none":
+        k = s.get("sticker_scale", 1.0); sc = hex2rgb(c.get("sticker", c["accent"]))
+        for f in (("front",) if place == "front" else ("back",) if place == "back" else ("front", "back")):
+            x, y, w, h = REGIONS[("torso", f)]; R = (26 if f == "front" else 36) * k; cy = 70 if f == "front" else 60
+            L.paste_tile("sticker", "torso", f, _sticker_tile(stk, w, h, 64, cy, R, sc))
+            L.elements.append({"element": "sticker", "part": "torso", "face": f,
+                               "box": [int(x + 64 - R), int(y + cy - R), int(2 * R), int(2 * R)]})
+    if s["emblem"] and not (stk != "none" and place in ("front", "both")):
         k = s["emblem_scale"]; cx, cy = 64, 60
         def em(d, w, h):
             for pts in ([(52, 50), (62, 50), (59, 70)], [(66, 50), (76, 50), (69, 70)]):

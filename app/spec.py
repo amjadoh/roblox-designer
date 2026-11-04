@@ -4,12 +4,12 @@
 """
 import copy, re
 
-from .generate import DEFAULT_SPEC
+from .generate import DEFAULT_SPEC, STICKERS, STICKER_PLACES
 
-PATTERNS = ("none", "diamond", "hex", "chevron")
+PATTERNS = ("none", "diamond", "hex", "chevron", "stripes")
 HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
 RANGES = {"pattern_opacity": (0.0, 0.6), "pocket_scale": (0.4, 1.8), "emblem_scale": (0.4, 1.8),
-          "cargo_pocket_scale": (0.4, 1.8)}
+          "cargo_pocket_scale": (0.4, 1.8), "sticker_scale": (0.4, 1.8)}
 
 
 class SpecError(ValueError):
@@ -28,10 +28,14 @@ def validate_patch(patch, ref=DEFAULT_SPEC, path=""):
         elif k == "colors":
             if not isinstance(v, dict): raise SpecError(f"{p}: لازم كائن")
             for ck, cv in v.items():
-                if ck not in ("base", "accent"): raise SpecError(f"لون غير معروف: {p}.{ck}")
+                if ck not in ("base", "accent", "sticker") or (ck == "sticker" and path != "shirt"): raise SpecError(f"لون غير معروف: {p}.{ck}")
                 if not (isinstance(cv, str) and HEX.match(cv)): raise SpecError(f"{p}.{ck}: لازم #RRGGBB")
         elif k == "pattern":
             if v not in PATTERNS: raise SpecError(f"{p}: المسموح {PATTERNS}")
+        elif k == "sticker":
+            if v not in STICKERS: raise SpecError(f"{p}: المسموح {STICKERS}")
+        elif k == "sticker_place":
+            if v not in STICKER_PLACES: raise SpecError(f"{p}: المسموح {STICKER_PLACES}")
         elif isinstance(r, dict):
             validate_patch(v, r, p)
         elif isinstance(r, bool):

@@ -156,7 +156,7 @@ def get_library(): return library.public()
 
 
 class Action(BaseModel):
-    action: str                      # style | palette | pattern | toggle | color | scale | surprise
+    action: str                      # style | palette | pattern | toggle | color | scale | sticker | surprise
     style: str | None = None
     palette: str | None = None
     value: str | bool | None = None
@@ -170,9 +170,9 @@ class Action(BaseModel):
 
 TOGGLES = {"shirt": ("pocket", "emblem", "sleeve_stripe", "collar", "hem", "cuff", "drawstrings"),
            "pants": ("cargo_pocket", "belt", "cuff", "knee_seams")}
-SCALES = {"pocket": "shirt", "emblem": "shirt", "cargo_pocket": "pants"}
+SCALES = {"pocket": "shirt", "emblem": "shirt", "cargo_pocket": "pants", "sticker": "shirt"}
 NAMES = {"pocket": "جيب الصدر", "emblem": "الشعار", "sleeve_stripe": "خط الأكمام", "collar": "الياقة", "hem": "الحاشية",
-         "cuff": "الأساور", "drawstrings": "حبال الهودي", "cargo_pocket": "جيوب الكارجو", "belt": "الحزام", "knee_seams": "خياطة الركبة"}
+         "cuff": "الأساور", "drawstrings": "حبال الهودي", "cargo_pocket": "جيوب الكارجو", "belt": "الحزام", "knee_seams": "خياطة الركبة", "sticker": "الرسمة"}
 GARMENT = {"shirt": "الهودي", "pants": "البنطلون"}
 
 
@@ -204,10 +204,14 @@ def action_patch(a: Action, spec):
         if a.slot not in ("base", "accent"): raise SpecError("لون غير معروف")
         what = "اللون الأساسي" if a.slot == "base" else "لون التفاصيل"
         return {g: {"colors": {a.slot: a.hex}} for g in gs}, f"غيّرت {what}" + (f" في {GARMENT[gs[0]]}" if len(gs) == 1 else "")
+    if a.action == "sticker":
+        ch = next((x for x in library.STICKER_CHOICES if x["id"] == a.value), None)
+        if not ch: raise SpecError("رسمة غير معروفة")
+        return {"shirt": {"sticker": a.value}}, ("شلت الرسمة" if a.value == "none" else f"حطيت رسمة {ch['emoji']} {ch['name']} على الصدر")
     if a.action == "scale":
         g = SCALES.get(a.key)
         if not g or not a.factor: raise SpecError("ما يتكبّر هذا العنصر")
-        k = a.key + "_scale"; v = round(max(.4, min(1.8, spec[g][k] * a.factor)), 3)
+        k = a.key + "_scale"; v = round(max(.4, min(1.8, spec[g].get(k, 1.0) * a.factor)), 3)
         return {g: {k: v}}, f"{'كبّرت' if a.factor > 1 else 'صغّرت'} {NAMES[a.key]}"
     raise SpecError("أمر غير معروف")
 

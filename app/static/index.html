@@ -40,6 +40,10 @@ button.primary{background:var(--red);border-color:var(--red)}button.ok{backgroun
 .m{padding:8px 10px;border-radius:10px;max-width:94%;line-height:1.7;font-size:16px;white-space:pre-wrap}
 .u{background:var(--card2);align-self:flex-start}.a{background:#1d2a22;align-self:flex-end}.w{background:#3a2a1a;align-self:flex-end}
 .m.c{color:#6cb6ff}
+#help{margin:8px 10px 0;background:var(--card);border-radius:10px;padding:8px 10px;font-size:14px;max-height:42vh;overflow:auto}
+#help summary{cursor:pointer;font-weight:bold}#help small{color:var(--muted);font-weight:normal}
+.hg{margin-top:8px;line-height:2}.hg b{display:block;font-size:13px;color:var(--muted)}.hg.no{font-size:13px;color:#e6b3a0}
+.ex{display:inline-block;background:var(--card2);border-radius:14px;padding:2px 10px;margin:2px;cursor:pointer;font-size:13px}.ex:hover{background:#3c3c4a}
 #form{display:flex;gap:6px;padding:10px;border-top:1px solid var(--line);flex-wrap:wrap}
 #form input{flex:1 1 160px;padding:10px;border-radius:8px;border:1px solid #3a3a46;background:#0e0e12;color:var(--text);font-family:inherit;font-size:15px}
 .hint{font-size:12px;color:var(--muted);padding:0 12px 8px}
@@ -75,23 +79,32 @@ button.primary{background:var(--red);border-color:var(--red)}button.ok{backgroun
 <button id="bnew">طقم جديد</button><button id="btpl">تحقق من القالب</button></header>
 
 <section id="panel">
- <div id="tabs"><button data-t="design" class="on">🎨 صمّم</button><button data-t="chatpane">💬 كلّمني</button></div>
- <div id="design" class="pane on">
+ <div id="tabs"><button data-t="chatpane" class="on">💬 كلّم كلود</button><button data-t="design">🎨 أزرار التصميم</button></div>
+ <div id="design" class="pane">
   <button id="surprise">🎲 فاجئني!</button>
   <div class="step"><h3>١. اختر ستايل</h3><div class="grid" id="styles"></div></div>
   <div class="step"><h3>٢. اختر الألوان</h3><div class="grid" id="palettes"></div></div>
   <div class="step"><h3>٣. النقش</h3><div class="chips" id="patterns"></div></div>
   <div class="step"><h3>٤. الإضافات</h3><div class="chips" id="extras"></div></div>
+  <div class="step"><h3>٥. رسمة على الصدر</h3><div class="chips" id="stickers"></div></div>
   <div class="step"><h3>🖌️ لون مخصص</h3>
    <div class="chips" style="margin-bottom:8px"><span class="chip on" data-slot="base">اللون الأساسي</span><span class="chip" data-slot="accent">لون التفاصيل</span>
     <span class="chip on" data-gar="both">الطقم كله</span><span class="chip" data-gar="shirt">الهودي</span><span class="chip" data-gar="pants">البنطلون</span></div>
    <div class="sw" id="swatches"></div></div>
   <p class="hint">👆 تقدر تضغط على أي جزء في «قالب القميص» أو «قالب البنطلون» وتعدّله لحاله.</p>
  </div>
- <div id="chatpane" class="pane">
+ <div id="chatpane" class="pane on">
+  <details id="help" open><summary>💡 وش أقدر أطلب من كلود؟ <small>(اضغط على أي مثال)</small></summary>
+   <div class="hg"><b>🎨 الألوان</b><span class="ex">خل القميص أزرق غامق</span><span class="ex">البنطلون أسود</span><span class="ex">التفاصيل أحمر</span><span class="ex">كله أخضر</span></div>
+   <div class="hg"><b>🖼️ رسمة على الصدر أو الظهر</b><span id="hstk"></span></div>
+   <div class="hg"><b>📏 النقش</b><span class="ex">حط خطوط</span><span class="ex">نقش معيّنات</span><span class="ex">نقش متعرّج</span><span class="ex">بدون نقش</span></div>
+   <div class="hg"><b>➕ إضافات</b><span class="ex">حط جيب</span><span class="ex">حط حزام</span><span class="ex">حبال الهودي</span><span class="ex">جيوب كارجو في البنطلون</span><span class="ex">خط على الأكمام</span></div>
+   <div class="hg"><b>📐 الحجم</b><span class="ex">كبّر الرسمة</span><span class="ex">صغّر الجيب</span><span class="ex">حط الرسمة على الظهر</span></div>
+   <div class="hg"><b>↩️ رجوع</b><span class="ex">رجّعه مثل قبل</span></div>
+   <div class="hg no"><b>🚫 ما نقدر عليه</b>الكتابة والحروف، شعارات الماركات والأندية، شخصيات الأفلام والألعاب والأنمي. والشعر والوجه والأجنحة المجسمة للحين ما انبنت.</div>
+  </details>
   <div id="log"></div>
-  <p class="hint">«نفّذ» للأوامر السريعة مثل: خفف الأحمر، كبّر الجيب، ثبّت البنطلون، تراجع.<br>«اسأل كلود» لأي فكرة ثانية، وكلود يرد عليك هنا.</p>
-  <form id="form"><input id="txt" placeholder="اكتب هنا…" autocomplete="off"><button class="primary">نفّذ</button><button type="button" id="bask">اسأل كلود 💬</button></form>
+  <form id="form"><input id="txt" placeholder="اكتب لكلود وش تبغا…" autocomplete="off"><button class="primary">أرسل لكلود 💬</button></form>
  </div>
 </section>
 
@@ -138,6 +151,8 @@ function buildLibrary(){
  LIB.palettes.forEach(p=>{const c=card(p.emoji,p.name,`<div class="pal"><i style="background:${p.shirt}"></i><i style="background:${p.accent}"></i><i style="background:${p.pants}"></i></div>`,()=>act({action:"palette",palette:p.id}));c.dataset.pal=p.id;$("#palettes").append(c)});
  LIB.patterns.forEach(p=>{const c=document.createElement("span");c.className="chip";c.textContent=p.emoji+" "+p.name;c.dataset.pat=p.id;c.onclick=()=>act({action:"pattern",value:p.id,garment:"shirt"});$("#patterns").append(c)});
  LIB.extras.forEach(x=>{const c=document.createElement("span");c.className="chip";c.textContent=x.emoji+" "+x.name;c.dataset.ex=x.key;c.dataset.g=x.garment;c.onclick=()=>act({action:"toggle",key:x.key,garment:x.garment});$("#extras").append(c)});
+ LIB.stickers.forEach(x=>{const c=document.createElement("span");c.className="chip";c.textContent=x.emoji+" "+x.name;c.dataset.stk=x.id;c.onclick=()=>act({action:"sticker",value:x.id});$("#stickers").append(c);
+  if(x.id!=="none"){const e=document.createElement("span");e.className="ex";e.textContent=x.emoji+" "+x.name;e.dataset.say="حط "+x.name+" على الصدر";$("#hstk").append(e)}});
  SWATCHES.forEach(h=>{const b=document.createElement("button");b.style.background=h;b.title=h;b.onclick=()=>{const slot=$("[data-slot].on").dataset.slot,g=$("[data-gar].on").dataset.gar;
   act({action:"color",slot,hex:h,garment:g==="both"?null:g})};$("#swatches").append(b)});
  $$("[data-slot]").forEach(c=>c.onclick=()=>{$$("[data-slot]").forEach(x=>x.classList.remove("on"));c.classList.add("on")});
@@ -146,13 +161,14 @@ function buildLibrary(){
 function syncCards(){if(!LIB||!P)return;const s=P.current.spec;
  $$("#palettes .card").forEach(c=>{const p=LIB.palettes.find(x=>x.id===c.dataset.pal);c.classList.toggle("on",p.shirt===s.shirt.colors.base&&p.accent===s.shirt.colors.accent&&p.pants===s.pants.colors.base)});
  $$("#patterns .chip").forEach(c=>c.classList.toggle("on",c.dataset.pat===s.shirt.pattern));
- $$("#extras .chip").forEach(c=>c.classList.toggle("on",!!s[c.dataset.g][c.dataset.ex]))}
+ $$("#extras .chip").forEach(c=>c.classList.toggle("on",!!s[c.dataset.g][c.dataset.ex]));
+ $$("#stickers .chip").forEach(c=>c.classList.toggle("on",c.dataset.stk===(s.shirt.sticker||"none")))}
 $("#surprise").onclick=()=>act({action:"surprise"});
 
 // ---- تحديد جزء بالنقر على القالب + شريط التعديل ----
 const NAMES={base:"القماش",pocket:"جيب الصدر",emblem:"الشعار",sleeve_stripe:"خط الأكمام",collar:"الياقة",hem:"الحاشية",cuff:"الأساور",drawstrings:"حبال الهودي",
- cargo_pocket:"جيب الكارجو",belt:"الحزام",knee_seams:"خياطة الركبة",pattern:"النقش"};
-const SCALABLE=["pocket","emblem","cargo_pocket"],TOGGLE={shirt:["pocket","emblem","sleeve_stripe","collar","hem","cuff","drawstrings"],pants:["cargo_pocket","belt","cuff","knee_seams"]};
+ cargo_pocket:"جيب الكارجو",belt:"الحزام",knee_seams:"خياطة الركبة",pattern:"النقش",sticker:"الرسمة"};
+const SCALABLE=["pocket","emblem","cargo_pocket","sticker"],TOGGLE={shirt:["pocket","emblem","sleeve_stripe","collar","hem","cuff","drawstrings"],pants:["cargo_pocket","belt","cuff","knee_seams"]};
 function hideSel(){selection=null;$("#seltool").classList.remove("show");$("#hilite").style.display="none"}
 $("#selx").onclick=hideSel;
 function drawHilite(){const i=$("#flat"),r=i.getBoundingClientRect(),v=$("#view").getBoundingClientRect();const s=Math.min(r.width/585,r.height/559);
@@ -161,6 +177,7 @@ function drawHilite(){const i=$("#flat"),r=i.getBoundingClientRect(),v=$("#view"
 function showSel(){const el=selection.element,g=selection.garment;$("#selname").textContent="✏️ "+(NAMES[el]||el)+" — "+(g==="shirt"?"الهودي":"البنطلون");
  const B=$("#selbtns");B.innerHTML="";const btn=(t,f)=>{const b=document.createElement("button");b.textContent=t;b.onclick=f;B.append(b)};
  if(SCALABLE.includes(el)){btn("➕ كبّر",()=>act({action:"scale",key:el,factor:1.2}));btn("➖ صغّر",()=>act({action:"scale",key:el,factor:.83}))}
+ if(el==="sticker")btn("🗑️ شيلها",()=>{act({action:"sticker",value:"none"});hideSel()});
  if(TOGGLE[g].includes(el))btn("🗑️ شيله",()=>{act({action:"toggle",key:el,garment:g,value:false});hideSel()});
  if(el==="base"||el==="pattern")LIB.patterns.forEach(p=>btn(p.emoji+" "+p.name,()=>act({action:"pattern",value:p.id,garment:g})));
  const slot=el==="base"?"base":"accent";const S=$("#selsw");S.innerHTML="";
@@ -174,12 +191,11 @@ $("#flat").onclick=e=>{const i=e.target,r=i.getBoundingClientRect();const s=Math
 addEventListener("resize",()=>{if(selection)drawHilite()});
 
 // ---- المحادثة: أوامر سريعة + طلبات حرة لكلود ----
-$("#form").onsubmit=async e=>{e.preventDefault();const t=$("#txt").value.trim();if(!t)return;$("#txt").value="";log(t,"u");
- try{const r=await post(`/api/projects/${P.id}/command`,{text:t,selection,base_revision:P.current.n});
-  log(r.ok?r.reply:r.reply+"\nإذا فكرتك مختلفة، اكتبها واضغط «اسأل كلود» 💬",r.ok?"a":"w");P=r.state;render()}catch(x){log("خطأ: "+x.message,"w")}};
+// كل كلام الولد يروح لكلود مباشرة (ما فيه ردود آلية من الموقع)
 const seenReplies=new Set(JSON.parse(localStorage.getItem("seenReplies")||"[]"));
-$("#bask").onclick=async()=>{const t=$("#txt").value.trim();if(!t)return log("اكتب فكرتك أول، بعدين اضغط «اسأل كلود».","w");$("#txt").value="";log(t,"u");
+$("#form").onsubmit=async e=>{e.preventDefault();const t=$("#txt").value.trim();if(!t)return;$("#txt").value="";log(t,"u");
  try{const r=await post(`/api/projects/${P.id}/requests`,{text:t,base_revision:P.current.n});log(r.reply,"a")}catch(x){log("ما وصل الطلب: "+x.message,"w")}};
+$("#help").addEventListener("click",e=>{const x=e.target.closest(".ex");if(!x)return;$("#txt").value=x.dataset.say||x.textContent;$("#txt").focus()});
 async function pollReplies(){if(!P)return;try{const rs=await api(`/api/projects/${P.id}/requests`);let changed=false;
  for(const r of rs.slice().reverse()){if(r.status!=="pending"&&r.reply&&!seenReplies.has(r.id)){seenReplies.add(r.id);changed=true;log("كلود: "+r.reply,(r.status==="done"?"a":"w")+" c");toast("كلود رد عليك 💬")}}
  if(changed){localStorage.setItem("seenReplies",JSON.stringify([...seenReplies].slice(-200)));P=await api("/api/projects/"+P.id);render()}}catch{}}

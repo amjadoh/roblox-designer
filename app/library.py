@@ -88,6 +88,24 @@ PATTERN_CHOICES = [
     {"id": "diamond", "name": "معيّنات", "emoji": "🔷"},
     {"id": "chevron", "name": "شيفرون", "emoji": "〰️"},
     {"id": "hex", "name": "خلايا", "emoji": "🐝"},
+    {"id": "stripes", "name": "خطوط", "emoji": "📏"},
+]
+
+# الرسومات: أشكال هندسية يرسمها الكود (generate.STICKERS). بدون شخصيات ولا شعارات ولا كتابة.
+STICKER_CHOICES = [
+    {"id": "none", "name": "بدون", "emoji": "🚫"},
+    {"id": "star", "name": "نجمة", "emoji": "⭐"},
+    {"id": "bolt", "name": "برق", "emoji": "⚡"},
+    {"id": "flame", "name": "نار", "emoji": "🔥"},
+    {"id": "wings", "name": "جناحين", "emoji": "🪽"},
+    {"id": "crown", "name": "تاج", "emoji": "👑"},
+    {"id": "moon", "name": "هلال", "emoji": "🌙"},
+    {"id": "heart", "name": "قلب", "emoji": "❤️"},
+    {"id": "claws", "name": "مخالب", "emoji": "🐾"},
+    {"id": "shield", "name": "درع", "emoji": "🛡️"},
+    {"id": "gem", "name": "جوهرة", "emoji": "💎"},
+    {"id": "planet", "name": "كوكب", "emoji": "🪐"},
+    {"id": "wolf", "name": "ذيب", "emoji": "🐺"},
 ]
 
 
@@ -114,4 +132,5 @@ def palette_patch(palette_id):
 
 def public():
     return {"styles": [{k: s[k] for k in ("id", "name", "emoji", "palette")} for s in STYLES],
-            "palettes": PALETTES, "extras": EXTRAS, "patterns": PATTERN_CHOICES}
+            "palettes": PALETTES, "extras": EXTRAS, "patterns": PATTERN_CHOICES,
+            "stickers": STICKER_CHOICES}

@@ -41,9 +41,13 @@
 الأشياء اللي تقدر تتحكم فيها في التصميم (من `DEFAULT_SPEC` في `app/generate.py`):
 
 - **القميص `shirt`:** فيه لونين: الأساسي `colors.base` واللون الثاني للتفاصيل `colors.accent`، وتكتبهم بصيغة `#RRGGBB`.
-  - النقش `pattern`: واحد من `none` / `diamond` / `hex` / `chevron`، وشفافيته `pattern_opacity` بين 0 و 0.6.
+  - النقش `pattern`: واحد من `none` / `diamond` / `hex` / `chevron` / `stripes` (خطوط مستقيمة)، وشفافيته `pattern_opacity` بين 0 و 0.6.
   - العناصر: `pocket` (جيب)، `emblem` (شعار هندسي على الصدر)، `sleeve_stripe` (خط على الكم)، `collar` (ياقة)، `hem` (حاشية)، `cuff` (أساور)، `drawstrings` (حبال الهودي). كلها true أو false.
   - الأحجام: `pocket_scale` و `emblem_scale` بين 0.4 و 1.8.
+  - **الرسمة `sticker`:** واحد من `none` / `star` نجمة / `bolt` برق / `flame` نار / `wings` جناحين / `crown` تاج / `moon` هلال / `heart` قلب / `claws` مخالب / `shield` درع / `gem` جوهرة / `planet` كوكب / `wolf` ذيب.
+    - مكانها `sticker_place`: `front` (الصدر) / `back` (الظهر) / `both`. وحجمها `sticker_scale` بين 0.4 و 1.8.
+    - لونها `shirt.colors.sticker` (اختياري، الافتراضي لون التفاصيل). لو الرسمة على الصدر، الشعار `emblem` ما ينرسم.
+    - لو طلب رسمة مو في القائمة (مثل تنين أو صقر)، اختر أقرب وحدة وقل له، وسجّل طلبه في «طلبات الولد».
 - **البنطلون `pants`:** نفس الألوان والنقش.
   - العناصر: `cargo_pocket` (جيب كارجو)، `belt` (حزام)، `cuff` (أساور)، `knee_seams` (خياطة الركبة).
   - الحجم: `cargo_pocket_scale` بين 0.4 و 1.8.
