@@ -210,3 +210,27 @@ def test_render_is_deterministic():
     import hashlib
     a = render_shirt(DEFAULT_SPEC["shirt"]).composite().tobytes(); b = render_shirt(DEFAULT_SPEC["shirt"]).composite().tobytes()
     assert hashlib.sha256(a).digest() == hashlib.sha256(b).digest()
+
+
+def test_stickers_render_validate_and_select():
+    from app.spec import validate_patch, SpecError
+    from app.generate import STICKERS
+    import pytest
+    for bad in ({"shirt": {"sticker": "venom"}}, {"shirt": {"sticker_place": "sleeve"}},
+                {"pants": {"colors": {"sticker": "#FF0000"}}}, {"shirt": {"sticker_scale": 3}}):
+        with pytest.raises(SpecError): validate_patch(bad)
+    validate_patch({"shirt": {"sticker": "wolf", "sticker_place": "both", "sticker_scale": 1.4, "colors": {"sticker": "#FF0000"}}})
+    plain = render_shirt(DEFAULT_SPEC["shirt"]).composite().tobytes()
+    for k in STICKERS[1:]:
+        s = copy.deepcopy(DEFAULT_SPEC["shirt"]); s["sticker"] = k
+        L = render_shirt(s)
+        assert L.composite().tobytes() != plain and any(e["element"] == "sticker" for e in L.elements)
+    old = copy.deepcopy(DEFAULT_SPEC["shirt"])
+    for k in ("sticker", "sticker_scale", "sticker_place"): old.pop(k)
+    assert render_shirt(old).composite().tobytes() == plain  # المشاريع القديمة بدون مفاتيح الرسمة ترسم مثل قبل
+    p = new(); pid = p["id"]
+    r = c.post(f"/api/projects/{pid}/apply", json={"action": "sticker", "value": "bolt"}).json()
+    assert r["ok"] and r["state"]["current"]["spec"]["shirt"]["sticker"] == "bolt"
+    r = c.post(f"/api/projects/{pid}/apply", json={"action": "scale", "key": "sticker", "factor": 1.2}).json()
+    assert r["ok"] and r["state"]["current"]["spec"]["shirt"]["sticker_scale"] == 1.2
+    assert not c.post(f"/api/projects/{pid}/apply", json={"action": "sticker", "value": "logo"}).json()["ok"]
